@@ -4751,6 +4751,19 @@ function renderPEspeciales(){
     if(!items.length)return;
     out+='<div class="card"><div class="ct"><div class="ct-dot ct-dot-o"></div>'+pol.name+'</div>';
     out+='<div style="font-size:9px;color:var(--tx3);margin-bottom:10px">'+T('specSubtitle')+'</div>';
+    // ── Paywall: block specials until admin approves payment ───────────────
+    if(!isPlayerPaid(CU,pol.id)){
+      var link=DB.settings&&DB.settings.stripeLink?DB.settings.stripeLink:'';
+      out+='<div style="background:linear-gradient(135deg,rgba(255,165,0,.15),rgba(255,165,0,.05));border:1px solid rgba(255,165,0,.4);border-radius:12px;padding:18px 14px;text-align:center">'
+        +'<div style="font-size:30px;margin-bottom:8px">🔒</div>'
+        +'<div style="font-family:Kallisto,sans-serif;font-size:13px;font-weight:700;color:var(--org);margin-bottom:6px">'+(CL==='es'?'Especiales bloqueados':'Specials locked')+'</div>'
+        +'<div style="font-size:11px;color:var(--tx2);line-height:1.5;margin-bottom:14px">'+(CL==='es'?'Completa tu inscripción para desbloquear el Top 3 y ganar puntos extra.':'Complete your registration to unlock the Top 3 and earn bonus points.')+'</div>'
+        +(link?'<a href="'+link+'?client_reference_id='+CU.id+'_'+pol.id+'" target="_blank" style="text-decoration:none" onclick="setTimeout(showPaymentToast,1500)">'
+          +'<button class="btn btn-p" style="background:var(--org);color:#fff;border:none;font-size:11px;letter-spacing:1px;padding:10px 24px">'+T('payTitle')+' '+usd(pol.fee)+'</button></a>'
+          :'<button onclick="pTab(\'inscripcion\',document.querySelector(\'#S_player .stab:nth-child(6)\'))" class="btn btn-p" style="background:var(--org);color:#fff;border:none;font-size:11px;letter-spacing:1px;padding:10px 24px">'+T('payNow')+'</button>')
+        +'</div></div>';
+      return;
+    }
     items.forEach(function(s){
       var myAns=(s.userAnswers||[]).find(function(a){return a.userId===CU.id;});
       var isClosed=s.status==='closed';
