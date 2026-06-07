@@ -2923,7 +2923,7 @@ function renderPInicio(){
       // ── 2-col: Upcoming/Results LEFT + Podium RIGHT ──
       const upcoming=ms.filter(m=>!m.result&&new Date(m.date)>=new Date()).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,5);
       const latest=ms.filter(m=>m.result).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
-      const mySpecials=getMyPodiumData();
+      const mySpecials=getMyPodiumData(pol.id);
 
       html+=`<div class="two-col-grid">`;
 
@@ -2993,6 +2993,19 @@ function renderPInicio(){
                 <div class="podium-pts">${pk.pts} pts</div>
               </div>`;
             }).join('')}
+          </div>
+        </div>`;
+      } else if(mySpecials.hasSpecials&&!isPaid){
+        // Top 3 locked until payment is approved for THIS pool
+        html+=`<div class="podium-card">
+          <div style="text-align:center;padding:6px 0">
+            <div style="font-size:30px;margin-bottom:6px">🔒</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:var(--org)">${CL==='es'?'Top 3 bloqueado':'Top 3 locked'}</div>
+            <div style="font-size:11px;color:var(--tx2);margin-bottom:12px">${CL==='es'?'Paga tu inscripción para elegir tu podio y ganar puntos extra.':'Pay your registration to pick your podium and earn bonus points.'}</div>
+            <button onclick="pTab('inscripcion',document.querySelector('#S_player .stab:nth-child(6)'))" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--org);color:#fff;border:none;font-family:Poppins,sans-serif;font-size:11px;font-weight:700;cursor:pointer">${T('payNow')}</button>
+          </div>
+          <div class="podium-row" style="opacity:.25;margin-top:10px">
+            ${['🥇','🥈','🥉'].map((medal,i)=>`<div class="podium-item ${i===0?'p1':i===1?'p2':'p3'}"><span class="podium-medal">${medal}</span><div class="podium-team">?</div></div>`).join('')}
           </div>
         </div>`;
       } else if(mySpecials.hasSpecials){
@@ -3108,8 +3121,9 @@ var SPEC_I18N={
 function sName(s){return CL==='es'?(s.name_es||s.name):(s.name_en||(SPEC_I18N[s.name]||[])[0]||s.name);}
 function sDesc(s){return CL==='es'?(s.desc_es||s.desc):(s.desc_en||(SPEC_I18N[s.name]||[])[1]||s.desc);}
 
-function getMyPodiumData(){
-  const specials=DB.specials||[];
+function getMyPodiumData(pollaId){
+  // Specials for this specific polla only
+  const specials=(DB.specials||[]).filter(s=>pollaId==null||s.pollaId===pollaId);
   if(!specials.length)return{hasSpecials:false,filled:false,picks:[]};
   const myPicks=specials.filter(s=>{
     const ans=(s.userAnswers||[]).find(a=>a.userId===CU.id);
