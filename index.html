@@ -1075,7 +1075,11 @@ function showTC(){var m=document.getElementById('tcModal');if(m)m.style.display=
     <!-- USUARIOS -->
     <div id="A_usuarios" class="hidden">
       <div class="card">
-        <div class="ct"><div class="ct-dot ct-dot-g"></div>Registered Players</div>
+        <div class="ct"><div class="ct-dot ct-dot-o"></div>Inscritos por Polla</div>
+        <div id="admPoolCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:4px"></div>
+      </div>
+      <div class="card">
+        <div class="ct" style="display:flex;align-items:center;justify-content:space-between"><span><div class="ct-dot ct-dot-g" style="display:inline-block"></div> <span id="admUsersTitle">Registered Players</span></span><span id="admUsersCount" style="font-size:10px;color:var(--tx3);font-weight:400"></span></div>
         <div style="overflow-x:auto">
           <table class="utbl" id="usersTable">
             <thead>
@@ -2617,14 +2621,57 @@ function sortUsers(col){
   else{DB.userSortCol=col;DB.userSortDir=col==='name'||col==='email'||col==='role'?'asc':'desc';}
   renderAdmUsers();
 }
+function setUserPoolFilter(pollaId){
+  DB.userPoolFilter=pollaId;
+  renderAdmUsers();
+}
+function renderAdmPoolCards(){
+  var cont=document.getElementById('admPoolCards');if(!cont)return;
+  var filter=DB.userPoolFilter==null?'all':DB.userPoolFilter;
+  var players=DB.users.filter(function(u){return u.role!=='admin';});
+  // "All players" card
+  var cards='';
+  var allSel=filter==='all';
+  cards+='<div onclick="setUserPoolFilter(null)" style="cursor:pointer;background:'+(allSel?'var(--org2)':'var(--bg4)')+';border:1.5px solid '+(allSel?'var(--org3)':'var(--bd)')+';border-radius:12px;padding:12px 10px">'
+    +'<div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Todos</div>'
+    +'<div style="font-family:Kallisto,sans-serif;font-size:22px;font-weight:700;color:'+(allSel?'var(--org)':'var(--tx)')+'">'+players.length+'</div>'
+    +'<div style="font-size:9px;color:var(--tx3)">registrados</div>'
+    +'</div>';
+  // One card per pool
+  DB.pollas.forEach(function(pol){
+    var paidCount=players.filter(function(u){return isPlayerPaid(u,pol.id);}).length;
+    var collected=paidCount*(pol.fee||0);
+    var sel=filter===pol.id;
+    cards+='<div onclick="setUserPoolFilter('+pol.id+')" style="cursor:pointer;background:'+(sel?'var(--org2)':'var(--bg4)')+';border:1.5px solid '+(sel?'var(--org3)':'var(--bd)')+';border-radius:12px;padding:12px 10px">'
+      +'<div style="font-size:10px;color:var(--tx2);font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+pol.name+'</div>'
+      +'<div style="font-family:Kallisto,sans-serif;font-size:22px;font-weight:700;color:'+(sel?'var(--org)':'var(--grn)')+'">'+paidCount+'</div>'
+      +'<div style="font-size:9px;color:var(--tx3)">inscritos · $'+collected+'</div>'
+      +'</div>';
+  });
+  cont.innerHTML=cards;
+}
 function renderAdmUsers(){
+  renderAdmPoolCards();
+  var poolFilter=DB.userPoolFilter==null?null:DB.userPoolFilter;
+  var filterPol=poolFilter!=null?DB.pollas.find(function(p){return p.id===poolFilter;}):null;
+  // Update title + count
+  var titleEl=document.getElementById('admUsersTitle');
+  if(titleEl)titleEl.textContent=filterPol?('Inscritos: '+filterPol.name):'Registered Players';
   const col=DB.userSortCol, dir=DB.userSortDir;
   ['name','email','points','preds','payments','role'].forEach(c=>{
     const th=document.getElementById('th-'+c);
     if(!th)return;
     th.className=col===c?(dir==='asc'?'sort-asc':'sort-desc'):'';
   });
-  const sorted=[...DB.users].sort((a,b)=>{
+  // Apply pool filter: only players paid/verified in selected pool
+  var baseUsers=DB.users.filter(function(u){
+    if(poolFilter==null)return true;
+    if(u.role==='admin')return false;
+    return isPlayerPaid(u,poolFilter);
+  });
+  var cntEl=document.getElementById('admUsersCount');
+  if(cntEl)cntEl.textContent=baseUsers.filter(function(u){return u.role!=='admin';}).length+' jugador(es)';
+  const sorted=[...baseUsers].sort((a,b)=>{
     let va,vb;
     if(col==='name'){va=a.name.toLowerCase();vb=b.name.toLowerCase();}
     else if(col==='email'){va=a.email.toLowerCase();vb=b.email.toLowerCase();}
