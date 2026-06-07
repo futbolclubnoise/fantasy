@@ -2625,6 +2625,10 @@ function setUserPoolFilter(pollaId){
   DB.userPoolFilter=pollaId;
   renderAdmUsers();
 }
+// Strict: counts ONLY players with a confirmed payment (not manual-access "verified")
+function hasPaidPool(u,pollaId){
+  return !!(u.payments&&u.payments.find(function(p){return p.pollaId===pollaId&&p.status==='succeeded';}));
+}
 function renderAdmPoolCards(){
   var cont=document.getElementById('admPoolCards');if(!cont)return;
   var filter=DB.userPoolFilter==null?'all':DB.userPoolFilter;
@@ -2639,7 +2643,7 @@ function renderAdmPoolCards(){
     +'</div>';
   // One card per pool
   DB.pollas.forEach(function(pol){
-    var paidCount=players.filter(function(u){return isPlayerPaid(u,pol.id);}).length;
+    var paidCount=players.filter(function(u){return hasPaidPool(u,pol.id);}).length;
     var collected=paidCount*(pol.fee||0);
     var sel=filter===pol.id;
     cards+='<div onclick="setUserPoolFilter('+pol.id+')" style="cursor:pointer;background:'+(sel?'var(--org2)':'var(--bg4)')+';border:1.5px solid '+(sel?'var(--org3)':'var(--bd)')+';border-radius:12px;padding:12px 10px">'
@@ -2663,11 +2667,11 @@ function renderAdmUsers(){
     if(!th)return;
     th.className=col===c?(dir==='asc'?'sort-asc':'sort-desc'):'';
   });
-  // Apply pool filter: only players paid/verified in selected pool
+  // Apply pool filter: only players who actually PAID the selected pool
   var baseUsers=DB.users.filter(function(u){
     if(poolFilter==null)return true;
     if(u.role==='admin')return false;
-    return isPlayerPaid(u,poolFilter);
+    return hasPaidPool(u,poolFilter);
   });
   var cntEl=document.getElementById('admUsersCount');
   if(cntEl)cntEl.textContent=baseUsers.filter(function(u){return u.role!=='admin';}).length+' jugador(es)';
