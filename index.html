@@ -3674,7 +3674,7 @@ function openModal(pollaId){
     html+='</div>';
   });
   // Especiales for this polla
-  var specials=(DB.specials||[]).filter(function(s){return s.pollaId===pollaId&&(s.status!=='closed'||s.answer);});
+  var specials=(DB.specials||[]).filter(function(s){return s.pollaId===pollaId&&(s.status!=='closed'||s.answer||(s.userAnswers||[]).some(function(a){return a.userId===CU.id;}));});
   if(specials.length){
     html+='<div style="font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 8px;padding-left:2px">⭐ Especiales</div>';
     specials.forEach(function(s){
@@ -4677,8 +4677,13 @@ function renderAdmEspeciales(){
   var out='';
   Object.keys(byPolla).forEach(function(pid){
     var pol=DB.pollas.find(function(p){return p.id===parseInt(pid);});
+    var poolItems=byPolla[pid];
+    var allLocked=poolItems.every(function(s){return s.status==='closed';});
     out+='<div style="margin-bottom:14px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--org);text-transform:uppercase;margin-bottom:6px">'+(pol?pol.name:'Polla #'+pid)+'</div>';
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--org);text-transform:uppercase">'+(pol?pol.name:'Polla #'+pid)+'</div>'
+      +'<button class="btn-xs" onclick="lockPollaTop3('+pid+','+(allLocked?'false':'true')+')" style="background:'+(allLocked?'var(--grn2)':'rgba(255,60,60,.12)')+';color:'+(allLocked?'var(--grn)':'var(--red)')+';font-weight:700;white-space:nowrap">'+(allLocked?'🔓 Abrir Top 3':'🔒 Bloquear Top 3')+'</button>'
+      +'</div>';
     byPolla[pid].sort(function(a,b){return(a.orden||0)-(b.orden||0);}).forEach(function(s){
       var isOpen=s.status!=='closed';
       var answered=(s.userAnswers||[]).length;
@@ -4734,6 +4739,18 @@ function createEspecial(){
 function toggleEspecial(id){
   var s=(DB.specials||[]).find(function(x){return x.id===id;});if(!s)return;
   s.status=s.status==='closed'?'open':'closed';
+  renderAdmEspeciales();saveDB();
+}
+
+// Lock/unlock ALL Top 3 specials of a pool at once (after first round, etc.)
+function lockPollaTop3(pollaId,lock){
+  pollaId=parseInt(pollaId);
+  var items=(DB.specials||[]).filter(function(s){return s.pollaId===pollaId;});
+  if(!items.length)return;
+  var msg=lock?'🔒 Bloquear el Top 3? Los jugadores ya no podrán llenar ni cambiar sus picks.'
+              :'🔓 Reabrir el Top 3? Los jugadores podrán volver a llenar sus picks.';
+  if(!confirm(msg))return;
+  items.forEach(function(s){s.status=lock?'closed':'open';});
   renderAdmEspeciales();saveDB();
 }
 
@@ -4812,7 +4829,7 @@ function renderPEspeciales(){
   }
   var out='';
   openPollas.forEach(function(pol){
-    var items=getSpecials(pol.id).filter(function(s){return s.status!=='closed'||s.answer;});
+    var items=getSpecials(pol.id).filter(function(s){return s.status!=='closed'||s.answer||(s.userAnswers||[]).some(function(a){return a.userId===CU.id;});});
     if(!items.length)return;
     out+='<div class="card"><div class="ct"><div class="ct-dot ct-dot-o"></div>'+pol.name+'</div>';
     out+='<div style="font-size:9px;color:var(--tx3);margin-bottom:10px">'+T('specSubtitle')+'</div>';
@@ -4907,6 +4924,9 @@ function submitSpecialAnswer(spId){
     'Remember — once submitted, this pick is FINAL and cannot be changed. Make sure "'+answer+'" is your pick.',
     function(){
       var s=(DB.specials||[]).find(function(x){return x.id===spId;});if(!s)return;
+      // Guard: blocked if Top 3 is locked or player hasn't paid this pool
+      if(s.status==='closed'){alert(CL==='es'?'El Top 3 está bloqueado.':'The Top 3 is locked.');renderPEspeciales();return;}
+      if(!isPlayerPaid(CU,s.pollaId)){alert(CL==='es'?'Completa tu inscripción primero.':'Complete your registration first.');renderPEspeciales();return;}
       if(!s.userAnswers)s.userAnswers=[];
       var existing=s.userAnswers.find(function(a){return a.userId===CU.id;});
       if(existing){existing.answer=answer;existing.ts=Date.now();}
