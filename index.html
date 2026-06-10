@@ -109,7 +109,7 @@ body.light .band-mid{background:#fff;}
 .bnr-wrap{padding:14px 22px 0;max-width:1080px;margin:0 auto;}
 .bnr-slot{width:100%;min-height:40px;border:1px dashed var(--bd2);border-radius:var(--r);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg3);position:relative;}
 .bnr-slot.empty{height:48px;}
-#bnrTopCarousel{height:110px;border-style:solid;border-color:var(--bd);}
+#bnrTopCarousel{width:100%;border-style:solid;border-color:var(--bd);transition:aspect-ratio .3s ease;}
 .bnr-lbl{font-size:8px;letter-spacing:2px;color:var(--tx3);text-transform:uppercase;}
 .bnr-slot img{width:100%;height:auto;object-fit:contain;display:none;position:static;}
 .bnr-pc{display:block;}
@@ -352,7 +352,6 @@ code{background:var(--bg3);padding:1px 6px;border-radius:4px;font-size:10px;}
   .bnr-pc{display:none;}
   .bnr-mob{display:block;}
   #bnr2Carousel{height:70px!important;}
-  #bnrTopCarousel{height:74px!important;}
   .nav{padding:0 14px;height:52px;}
   .nav-t1{font-size:11px;letter-spacing:2px;}
   .nav-t2{display:none;}
@@ -2550,6 +2549,13 @@ function applyBanners(){
 
   wrap.style.display='block';
 
+  // Match carousel aspect ratio to the image's real dimensions (full size, no letterbox/crop)
+  function setRatio(im){
+    if(im&&im.naturalWidth&&im.naturalHeight){
+      carousel.style.aspectRatio=im.naturalWidth+' / '+im.naturalHeight;
+    }
+  }
+
   // Load images, position off-screen (except first)
   imgs.forEach(function(im,i){
     if(!im)return;
@@ -2558,6 +2564,10 @@ function applyBanners(){
       im.style.display='block';
       im.style.transition='none';
       im.style.transform=i===0?'translateX(0)':'translateX(100%)';
+      if(i===0){
+        if(im.complete)setRatio(im);
+        im.onload=function(){setRatio(im);};
+      }
     }else{
       im.style.display='none';im.src='';
     }
@@ -2592,6 +2602,7 @@ function applyBanners(){
     leaving.style.transition='transform .55s cubic-bezier(.4,0,.2,1)';
     entering.style.transform='translateX(0)';
     leaving.style.transform='translateX(-100%)';
+    setRatio(entering);
     window._bnrTopIdx=nextIdx;
     dots.forEach(function(d,i){
       if(!d)return;
