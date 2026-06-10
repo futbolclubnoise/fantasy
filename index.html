@@ -109,7 +109,7 @@ body.light .band-mid{background:#fff;}
 .bnr-wrap{padding:14px 22px 0;max-width:1080px;margin:0 auto;}
 .bnr-slot{width:100%;min-height:40px;border:1px dashed var(--bd2);border-radius:var(--r);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg3);position:relative;}
 .bnr-slot.empty{height:48px;}
-#bnrTopCarousel{width:100%;border-style:solid;border-color:var(--bd);transition:aspect-ratio .3s ease;}
+#bnrTopCarousel{width:100%;aspect-ratio:1400 / 180;border-style:solid;border-color:var(--bd);}
 .bnr-lbl{font-size:8px;letter-spacing:2px;color:var(--tx3);text-transform:uppercase;}
 .bnr-slot img{width:100%;height:auto;object-fit:contain;display:none;position:static;}
 .bnr-pc{display:block;}
@@ -720,10 +720,10 @@ function showTC(){var m=document.getElementById('tcModal');if(m)m.style.display=
   <!-- BANNER TOP (rotating carousel) -->
   <div class="bnr-wrap" id="bnrTopWrap" style="display:none">
     <div id="bnrTopCarousel" class="bnr-slot" style="position:relative;overflow:hidden;padding:0;min-height:0">
-      <img id="bnrTopImg0" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
-      <img id="bnrTopImg1" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
-      <img id="bnrTopImg2" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
-      <img id="bnrTopImg3" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <img id="bnrTopImg0" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <img id="bnrTopImg1" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <img id="bnrTopImg2" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <img id="bnrTopImg3" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
       <div id="bnrTopDots" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);gap:5px;z-index:5;display:none">
         <span class="bnrTopDot" data-i="0" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.9);display:none;transition:background .3s"></span>
         <span class="bnrTopDot" data-i="1" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);display:none;transition:background .3s"></span>
@@ -820,8 +820,8 @@ function showTC(){var m=document.getElementById('tcModal');if(m)m.style.display=
   <div id="bnr2Carousel" style="width:100%;height:90px;overflow:hidden;position:relative;background:var(--bg3)">
     <span class="bnr-lbl" id="bnr2EmptyLbl">Bottom Banner</span>
     <img id="bnr2ImgA" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(0);transition:transform 0.55s cubic-bezier(.4,0,.2,1)">
-    <img id="bnr2ImgB" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform 0.55s cubic-bezier(.4,0,.2,1)">
-    <img id="bnr2ImgC" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform 0.55s cubic-bezier(.4,0,.2,1)">
+    <img id="bnr2ImgB" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transform:translateX(100%);transition:transform 0.55s cubic-bezier(.4,0,.2,1)">
+    <img id="bnr2ImgC" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transform:translateX(100%);transition:transform 0.55s cubic-bezier(.4,0,.2,1)">
     <!-- slide dots -->
     <div id="bnr2Dots" style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);gap:5px;z-index:5;display:flex">
       <span id="bnr2Dot0" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.9);display:inline-block;transition:background .3s"></span>
@@ -2549,14 +2549,7 @@ function applyBanners(){
 
   wrap.style.display='block';
 
-  // Match carousel aspect ratio to the image's real dimensions (full size, no letterbox/crop)
-  function setRatio(im){
-    if(im&&im.naturalWidth&&im.naturalHeight){
-      carousel.style.aspectRatio=im.naturalWidth+' / '+im.naturalHeight;
-    }
-  }
-
-  // Load images, position off-screen (except first)
+  // Load images, position off-screen (except first). Fixed 1400×180 ratio (CSS) + object-fit:cover fills full width.
   imgs.forEach(function(im,i){
     if(!im)return;
     if(i<active.length){
@@ -2564,10 +2557,6 @@ function applyBanners(){
       im.style.display='block';
       im.style.transition='none';
       im.style.transform=i===0?'translateX(0)':'translateX(100%)';
-      if(i===0){
-        if(im.complete)setRatio(im);
-        im.onload=function(){setRatio(im);};
-      }
     }else{
       im.style.display='none';im.src='';
     }
@@ -2602,7 +2591,6 @@ function applyBanners(){
     leaving.style.transition='transform .55s cubic-bezier(.4,0,.2,1)';
     entering.style.transform='translateX(0)';
     leaving.style.transform='translateX(-100%)';
-    setRatio(entering);
     window._bnrTopIdx=nextIdx;
     dots.forEach(function(d,i){
       if(!d)return;
