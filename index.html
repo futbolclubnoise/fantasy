@@ -109,6 +109,7 @@ body.light .band-mid{background:#fff;}
 .bnr-wrap{padding:14px 22px 0;max-width:1080px;margin:0 auto;}
 .bnr-slot{width:100%;min-height:40px;border:1px dashed var(--bd2);border-radius:var(--r);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg3);position:relative;}
 .bnr-slot.empty{height:48px;}
+#bnrTopCarousel{height:110px;border-style:solid;border-color:var(--bd);}
 .bnr-lbl{font-size:8px;letter-spacing:2px;color:var(--tx3);text-transform:uppercase;}
 .bnr-slot img{width:100%;height:auto;object-fit:contain;display:none;position:static;}
 .bnr-pc{display:block;}
@@ -351,6 +352,7 @@ code{background:var(--bg3);padding:1px 6px;border-radius:4px;font-size:10px;}
   .bnr-pc{display:none;}
   .bnr-mob{display:block;}
   #bnr2Carousel{height:70px!important;}
+  #bnrTopCarousel{height:74px!important;}
   .nav{padding:0 14px;height:52px;}
   .nav-t1{font-size:11px;letter-spacing:2px;}
   .nav-t2{display:none;}
@@ -716,9 +718,21 @@ function showTC(){var m=document.getElementById('tcModal');if(m)m.style.display=
     <button class="stab" onclick="pTab('inscripcion',this)" data-t="joinPool">Join Pool</button>
     <button class="stab" onclick="pTab('perfil',this)" data-t="profile">Profile</button>
   </div>
-  <!-- BANNER TOP -->
-  <div class="bnr-wrap bnr-pc"><div class="bnr-slot empty" id="bnr1"><span class="bnr-lbl">Banner 1 — Desktop</span><img id="bnr1Img" src="" alt=""></div></div>
-  <div class="bnr-wrap bnr-mob"><div class="bnr-slot empty" id="bnr1m"><span class="bnr-lbl">Banner 1 — Mobile</span><img id="bnr1mImg" src="" alt=""></div></div>
+  <!-- BANNER TOP (rotating carousel) -->
+  <div class="bnr-wrap" id="bnrTopWrap" style="display:none">
+    <div id="bnrTopCarousel" class="bnr-slot" style="position:relative;overflow:hidden;padding:0;min-height:0">
+      <img id="bnrTopImg0" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <img id="bnrTopImg1" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <img id="bnrTopImg2" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <img id="bnrTopImg3" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;position:absolute;inset:0;transform:translateX(100%);transition:transform .55s cubic-bezier(.4,0,.2,1)">
+      <div id="bnrTopDots" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);gap:5px;z-index:5;display:none">
+        <span class="bnrTopDot" data-i="0" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.9);display:none;transition:background .3s"></span>
+        <span class="bnrTopDot" data-i="1" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);display:none;transition:background .3s"></span>
+        <span class="bnrTopDot" data-i="2" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);display:none;transition:background .3s"></span>
+        <span class="bnrTopDot" data-i="3" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);display:none;transition:background .3s"></span>
+      </div>
+    </div>
+  </div>
   <div class="page">
 
     <div id="P_inicio">
@@ -1065,7 +1079,7 @@ function showTC(){var m=document.getElementById('tcModal');if(m)m.style.display=
     <div id="A_banners" class="hidden">
       <div class="card">
         <div class="ct"><div class="ct-dot ct-dot-g"></div>Ad Banners</div>
-        <p style="font-size:10px;color:var(--tx2);margin-bottom:14px">Banners are shown at the top and bottom of the player portal.</p>
+        <p style="font-size:10px;color:var(--tx2);margin-bottom:14px">Todas las imágenes rotan en un solo banner arriba del portal (cada 5 segundos).</p>
         <div id="bnrAdm"></div>
         <button class="btn btn-p" onclick="saveBanners()">UPDATE BANNERS</button>
         <div id="bnrOK" class="msg-ok" style="margin-top:9px">Banners actualizados ✓</div>
@@ -2417,7 +2431,7 @@ function saveBanners(){
 function renderAdmBanners(){
   var rows='';
   // ── Banner 1 (top, single image) ──────────────────────────────────
-  rows+='<div class="card" style="margin-bottom:12px"><div class="ct"><div class="ct-dot ct-dot-o"></div>Banner 1 — Top</div>';
+  rows+='<div class="card" style="margin-bottom:12px"><div class="ct"><div class="ct-dot ct-dot-o"></div>Banner Principal (rota arriba)</div>';
   var hasB1=DB.banners.b1&&DB.banners.b1.length>10;
   var hasB1m=DB.banners.b1m&&DB.banners.b1m.length>10;
   // Desktop banner
@@ -2442,8 +2456,8 @@ function renderAdmBanners(){
     +'</div></div>';
 
   // ── Banner 2 (bottom slideshow — 3 slots) ─────────────────────────
-  rows+='<div class="card"><div class="ct"><div class="ct-dot ct-dot-b"></div>Banner 2 — Bottom Slideshow</div>';
-  rows+='<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Upload up to 3 images — they will rotate automatically every 4 seconds.</div>';
+  rows+='<div class="card"><div class="ct"><div class="ct-dot ct-dot-b"></div>Slides adicionales (rotan arriba)</div>';
+  rows+='<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Sube hasta 3 imágenes más — rotarán junto al Banner Principal cada 5 segundos.</div>';
   var b2slots=[
     {k:'b2a',ku:'b2aurl',lbl:'Slide 1'},
     {k:'b2b',ku:'b2burl',lbl:'Slide 2'},
@@ -2494,125 +2508,107 @@ function loadBnrFile(e){
 function removeBnr(k){DB.banners[k]='';applyBanners();renderAdmBanners();saveDB();}
 
 function applyBanners(){
-  // ── Banner 1 (top static — desktop + mobile share same image) ──────
-  var b1src=DB.banners.b1||'';
-  ['bnr1Img','bnr1mImg'].forEach(function(imgId){
-    var img=document.getElementById(imgId);
-    var slot=img?img.closest('.bnr-slot'):null;
-    var lbl=slot?slot.querySelector('.bnr-lbl'):null;
-    if(!img)return;
-    if(b1src){img.src=b1src;img.style.display='block';if(lbl)lbl.style.display='none';if(slot)slot.classList.remove('empty');}
-    else{img.style.display='none';if(lbl)lbl.style.display='block';if(slot)slot.classList.add('empty');}
-    if(slot&&DB.banners.b1url&&!slot.dataset.linked){
-      slot.style.cursor='pointer';slot.onclick=function(){window.open(DB.banners.b1url,'_blank');};slot.dataset.linked='1';
-    }
-  });
+  // ── Single TOP rotating carousel — cycles through all uploaded images ──
+  // Sources (in order): Banner 1 (b1), then the 3 slides (b2a, b2b, b2c)
+  var wrap=document.getElementById('bnrTopWrap');
+  var carousel=document.getElementById('bnrTopCarousel');
+  if(!wrap||!carousel)return;
 
-  // ── Banner 2 (bottom slideshow — 3 images) ───────────────────────
-  var fixedWrap=document.getElementById('bnr2FixedWrap');
-  if(!fixedWrap)return;
-  var slides=[
-    {img:document.getElementById('bnr2ImgA'),src:DB.banners.b2a||'',url:DB.banners.b2aurl||''},
-    {img:document.getElementById('bnr2ImgB'),src:DB.banners.b2b||'',url:DB.banners.b2burl||''},
-    {img:document.getElementById('bnr2ImgC'),src:DB.banners.b2c||'',url:DB.banners.b2curl||''}
+  // Hide the old bottom fixed bar permanently
+  var oldBottom=document.getElementById('bnr2FixedWrap');
+  if(oldBottom)oldBottom.style.display='none';
+  var page=document.querySelector('#S_player .page');
+  if(page)page.style.paddingBottom='0';
+
+  // Build active slide list from uploaded images
+  var sources=[
+    {src:DB.banners.b1||'', url:DB.banners.b1url||''},
+    {src:DB.banners.b2a||'',url:DB.banners.b2aurl||''},
+    {src:DB.banners.b2b||'',url:DB.banners.b2burl||''},
+    {src:DB.banners.b2c||'',url:DB.banners.b2curl||''}
   ];
-  var active=slides.filter(function(s){return s.src&&s.src.length>10;});
-  var emptyLbl=document.getElementById('bnr2EmptyLbl');
-  var dotsEl=document.getElementById('bnr2Dots');
+  var active=sources.filter(function(s){return s.src&&s.src.length>10;});
+
+  var imgs=[
+    document.getElementById('bnrTopImg0'),
+    document.getElementById('bnrTopImg1'),
+    document.getElementById('bnrTopImg2'),
+    document.getElementById('bnrTopImg3')
+  ];
+  var dots=Array.prototype.slice.call(document.querySelectorAll('#bnrTopWrap .bnrTopDot'));
+  var dotsEl=document.getElementById('bnrTopDots');
 
   // Stop any previous timer
-  if(window._bnrTimer){clearInterval(window._bnrTimer);window._bnrTimer=null;}
+  if(window._bnrTopTimer){clearInterval(window._bnrTopTimer);window._bnrTopTimer=null;}
 
+  // Nothing uploaded → hide whole banner
   if(active.length===0){
-    fixedWrap.style.display='none';
-    slides.forEach(function(s){if(s.img){s.img.style.display='none';s.img.src='';}});
-    if(emptyLbl)emptyLbl.style.display='block';
-    if(dotsEl)dotsEl.style.display='none';
-    var page=document.querySelector('#S_player .page');
-    if(page)page.style.paddingBottom='0';
+    wrap.style.display='none';
+    imgs.forEach(function(im){if(im){im.style.display='none';im.src='';}});
     return;
   }
 
-  // Show wrapper, hide empty label
-  fixedWrap.style.display='block';
-  if(emptyLbl)emptyLbl.style.display='none';
-  if(dotsEl)dotsEl.style.display=active.length>1?'flex':'none';
+  wrap.style.display='block';
 
-  // Preload images, position off-screen to the right (except first = index 0)
-  active.forEach(function(s,i){
-    if(!s.img)return;
-    s.img.src=s.src;
-    s.img.style.display='block';
-    s.img.style.transition='none';
-    s.img.style.transform=i===0?'translateX(0)':'translateX(100%)';
-  });
-  // Hide unused slide slots
-  slides.forEach(function(s){
-    if(active.indexOf(s)<0&&s.img){s.img.style.display='none';s.img.src='';}
-  });
-
-  // Wire dot elements
-  var dotEls=[
-    document.getElementById('bnr2Dot0'),
-    document.getElementById('bnr2Dot1'),
-    document.getElementById('bnr2Dot2')
-  ];
-
-  window._bnrIdx=0;
-
-  function goTo(nextIdx){
-    var prevIdx=window._bnrIdx;
-    if(nextIdx===prevIdx)return;
-    var entering=active[nextIdx].img;
-    var leaving=active[prevIdx].img;
-    // Position entering off-screen right (no transition yet)
-    entering.style.transition='none';
-    entering.style.transform='translateX(100%)';
-    // Force reflow so the starting position registers
-    entering.getBoundingClientRect();
-    // Now slide both with transition
-    entering.style.transition='transform 0.55s cubic-bezier(.4,0,.2,1)';
-    leaving.style.transition='transform 0.55s cubic-bezier(.4,0,.2,1)';
-    entering.style.transform='translateX(0)';
-    leaving.style.transform='translateX(-100%)';
-    window._bnrIdx=nextIdx;
-    // Update dots
-    dotEls.forEach(function(d,i){
-      if(!d)return;
-      if(i<active.length){d.style.display='inline-block';d.style.background=i===nextIdx?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.35)';}
-      else{d.style.display='none';}
-    });
-    // Wire click URL for current slide
-    var carousel=document.getElementById('bnr2Carousel');
-    if(carousel){
-      var curUrl=active[nextIdx].url||'';
-      carousel.style.cursor=curUrl?'pointer':'default';
-      carousel.onclick=curUrl?function(){window.open(curUrl,'_blank');}:null;
+  // Load images, position off-screen (except first)
+  imgs.forEach(function(im,i){
+    if(!im)return;
+    if(i<active.length){
+      im.src=active[i].src;
+      im.style.display='block';
+      im.style.transition='none';
+      im.style.transform=i===0?'translateX(0)':'translateX(100%)';
+    }else{
+      im.style.display='none';im.src='';
     }
-  }
+  });
 
-  // Init dot state for slide 0
-  dotEls.forEach(function(d,i){
+  // Dots
+  if(dotsEl)dotsEl.style.display=active.length>1?'flex':'none';
+  dots.forEach(function(d,i){
     if(!d)return;
-    if(i<active.length){d.style.display='inline-block';d.style.background=i===0?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.35)';}
+    if(i<active.length){d.style.display='inline-block';d.style.background=i===0?'rgba(255,255,255,.9)':'rgba(255,255,255,.35)';}
     else{d.style.display='none';}
   });
-  // Init click for slide 0
-  (function(){
-    var carousel=document.getElementById('bnr2Carousel');
-    if(carousel){var u=active[0].url||'';carousel.style.cursor=u?'pointer':'default';carousel.onclick=u?function(){window.open(u,'_blank');}:null;}
-  })();
 
-  if(active.length>1){
-    window._bnrTimer=setInterval(function(){
-      var next=(window._bnrIdx+1)%active.length;
-      goTo(next);
-    },5000);
+  window._bnrTopIdx=0;
+
+  function wireClick(idx){
+    var u=active[idx].url||'';
+    carousel.style.cursor=u?'pointer':'default';
+    carousel.onclick=u?function(){window.open(u,'_blank');}:null;
+  }
+  wireClick(0);
+
+  function goTo(nextIdx){
+    var prevIdx=window._bnrTopIdx;
+    if(nextIdx===prevIdx)return;
+    var entering=imgs[nextIdx], leaving=imgs[prevIdx];
+    if(!entering||!leaving)return;
+    entering.style.transition='none';
+    entering.style.transform='translateX(100%)';
+    entering.getBoundingClientRect(); // reflow
+    entering.style.transition='transform .55s cubic-bezier(.4,0,.2,1)';
+    leaving.style.transition='transform .55s cubic-bezier(.4,0,.2,1)';
+    entering.style.transform='translateX(0)';
+    leaving.style.transform='translateX(-100%)';
+    window._bnrTopIdx=nextIdx;
+    dots.forEach(function(d,i){
+      if(!d)return;
+      if(i<active.length){d.style.display='inline-block';d.style.background=i===nextIdx?'rgba(255,255,255,.9)':'rgba(255,255,255,.35)';}
+      else{d.style.display='none';}
+    });
+    wireClick(nextIdx);
   }
 
-  // Bottom padding so content isn't hidden behind fixed banner (80px height + border)
-  var page=document.querySelector('#S_player .page');
-  if(page)page.style.paddingBottom='88px';
+  // Let dots be clickable
+  dots.forEach(function(d,i){if(d)d.style.cursor=i<active.length?'pointer':'default';d&&(d.onclick=function(){goTo(i);});});
+
+  if(active.length>1){
+    window._bnrTopTimer=setInterval(function(){
+      goTo((window._bnrTopIdx+1)%active.length);
+    },5000);
+  }
 }
 
 // ═══════════ SORTABLE USERS TABLE ═══════════
