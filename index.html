@@ -246,7 +246,8 @@ body.light .btn-xs:hover{background:rgba(180,80,0,.08);}
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 input[type=number]{-moz-appearance:textfield;}
-.sc-inp{width:46px;padding:5px;background:var(--inp);border:1px solid var(--bd2);border-radius:7px;color:var(--tx);font-family:'Kallisto',sans-serif;font-weight:500;font-size:18px;text-align:center;outline:none;transition:border .2s;}
+.sc-inp{width:58px;padding:5px;background:var(--inp);border:1px solid var(--bd2);border-radius:7px;color:var(--tx);font-family:'Kallisto',sans-serif;font-weight:500;font-size:18px;text-align:center;outline:none;transition:border .2s;-moz-appearance:textfield;appearance:textfield;}
+.sc-inp::-webkit-outer-spin-button,.sc-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .sc-inp:focus{border-color:var(--bd3);}
 .sc-sep{font-size:16px;color:var(--tx3);}
 
@@ -367,7 +368,7 @@ code{background:var(--bg3);padding:1px 6px;border-radius:4px;font-size:10px;}
   .modal{align-items:center;padding:12px;}
   .stab{padding:9px 9px;font-size:10.5px;letter-spacing:0.3px;}
   .nav-logo{width:30px;height:30px;}
-  .sc-inp{width:42px!important;font-size:16px!important;}
+  .sc-inp{width:52px!important;font-size:16px!important;}
   .pool-hero-name{font-size:16px!important;}
   .pool-hero-meta{font-size:11px!important;}
   .sp-val{font-size:16px!important;}
@@ -2243,9 +2244,9 @@ function renderAdmRes(){
               ${hI}
             </div>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-              <input class="sc-inp" id="rh${m.id}" type="number" min="0" placeholder="0" style="width:46px;font-size:18px">
+              <input class="sc-inp" id="rh${m.id}" type="number" min="0" placeholder="0" style="width:58px;font-size:18px">
               <span style="color:var(--tx3);font-weight:700;font-size:13px">—</span>
-              <input class="sc-inp" id="ra${m.id}" type="number" min="0" placeholder="0" style="width:46px;font-size:18px">
+              <input class="sc-inp" id="ra${m.id}" type="number" min="0" placeholder="0" style="width:58px;font-size:18px">
             </div>
             <div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:5px;min-width:0">
               ${aI}
@@ -3639,7 +3640,7 @@ function openModal(pollaId){
     } else if(!isPaid){
       c+='<div style="display:flex;align-items:center;gap:6px">'
         +'<div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0"><span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.home+'</span>'+hInline+'</div>'
-        +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><input class="sc-inp" type="number" min="0" placeholder="0" disabled style="width:46px;font-size:18px;text-align:center;opacity:0.3"><span style="color:var(--tx3);font-weight:700;font-size:13px">—</span><input class="sc-inp" type="number" min="0" placeholder="0" disabled style="width:46px;font-size:18px;text-align:center;opacity:0.3"></div>'
+        +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><input class="sc-inp" type="number" min="0" placeholder="0" disabled style="width:58px;font-size:18px;text-align:center;opacity:0.3"><span style="color:var(--tx3);font-weight:700;font-size:13px">—</span><input class="sc-inp" type="number" min="0" placeholder="0" disabled style="width:58px;font-size:18px;text-align:center;opacity:0.3"></div>'
         +'<div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:5px;min-width:0">'+aInline+'<span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.away+'</span></div>'
         +'</div>'
         +'<div style="text-align:center;margin-top:7px"><button onclick="document.getElementById(\'predModal\').style.display=\'none\';pTab(\'inscripcion\',document.querySelector(\'#S_player .stab:nth-child(6)\'))" style="padding:5px 20px;font-size:9px;border-radius:7px;background:var(--org);color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;letter-spacing:0.5px">🔒 Join Pool</button></div>';
@@ -3648,7 +3649,7 @@ function openModal(pollaId){
       var hv=pr!=null?pr.home:'';var av=pr!=null?pr.away:'';var btnId='btn_'+m.id;
       c+='<div style="display:flex;align-items:center;gap:6px">'
         +'<div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0"><span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.home+'</span>'+hInline+'</div>'
-        +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><input class="sc-inp" id="ph_'+m.id+'" type="number" min="0" value="'+hv+'" placeholder="0" style="width:46px;font-size:18px;text-align:center"'+(pr&&!canEdit?' disabled style="opacity:0.5;width:46px;font-size:18px;text-align:center"':'')+'><span style="color:var(--tx3);font-weight:700;font-size:13px">—</span><input class="sc-inp" id="pa_'+m.id+'" type="number" min="0" value="'+av+'" placeholder="0" style="width:46px;font-size:18px;text-align:center"'+(pr&&!canEdit?' disabled style="opacity:0.5;width:46px;font-size:18px;text-align:center"':'')+'></div>'
+        +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><input class="sc-inp" id="ph_'+m.id+'" type="number" min="0" value="'+hv+'" placeholder="0" style="width:58px;font-size:18px;text-align:center"'+(pr&&!canEdit?' disabled style="opacity:0.5;width:58px;font-size:18px;text-align:center"':'')+'><span style="color:var(--tx3);font-weight:700;font-size:13px">—</span><input class="sc-inp" id="pa_'+m.id+'" type="number" min="0" value="'+av+'" placeholder="0" style="width:58px;font-size:18px;text-align:center"'+(pr&&!canEdit?' disabled style="opacity:0.5;width:58px;font-size:18px;text-align:center"':'')+'></div>'
         +'<div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:5px;min-width:0">'+aInline+'<span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.away+'</span></div>'
         +'</div>'
         +'<div style="text-align:center;margin-top:5px">'
