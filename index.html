@@ -3913,12 +3913,12 @@ function matchIsLocked(m){
   if(m.result)return true; // already has result
   var kickoff=new Date(m.date).getTime();
   var now=Date.now();
-  return now >= kickoff - (5*60*1000); // 5 minutes before
+  return now >= kickoff - (10*60*1000); // 10 minutes before
 }
 function timeUntilLock(m){
   if(!m.date)return '';
   var kickoff=new Date(m.date).getTime();
-  var diff=kickoff-(5*60*1000)-Date.now();
+  var diff=kickoff-(10*60*1000)-Date.now();
   if(diff<=0)return T('locked');
   var h=Math.floor(diff/3600000);
   var min=Math.floor((diff%3600000)/60000);
@@ -3932,7 +3932,7 @@ function savePreds(){
   const ms=DB.matches.filter(m=>m.pollaId===activePolla);
   let saved=0;
   ms.forEach(m=>{
-    if(matchIsLocked(m))return; // use same 5min cutoff as saveOnePred
+    if(matchIsLocked(m))return; // use same 10min cutoff as saveOnePred
     const h=document.getElementById('ph_'+m.id),a=document.getElementById('pa_'+m.id);
     if(!h||!a||h.value===''||a.value==='')return;
     const existingPr=CU.predictions.find(p=>p.matchId===m.id);
@@ -4039,7 +4039,7 @@ var LD={
     rulesPrizesTitle:'🏆 Prizes',rulesGeneralTitle:'📌 General Rules',
     rule1:'Prizes are awarded to <strong>1st, 2nd and 3rd place</strong> by total points.',
     rule2:'In case of a <strong>tie</strong>, the prize is split equally among tied players.',
-    rule3:'Matches are <strong>locked 5 minutes</strong> before kickoff — no predictions accepted after.',
+    rule3:'Matches are <strong>locked 10 minutes</strong> before kickoff — no predictions accepted after.',
     rule4:'<strong>No refunds</strong> are issued once registration is confirmed.',
     rulesModalTitle:'📋 Pool Rules',understood:'GOT IT ✓',
     rulesMultiSub:'Predict the score of each match. Earn points based on accuracy:',
@@ -4100,7 +4100,7 @@ var LD={
     rulesPrizesTitle:'🏆 Premios',rulesGeneralTitle:'📌 Reglas Generales',
     rule1:'Los premios se entregan al <strong>1°, 2° y 3° lugar</strong> según puntos acumulados.',
     rule2:'En caso de <strong>empate de puntos</strong>, el premio se reparte en partes iguales entre los jugadores empatados.',
-    rule3:'Los partidos se <strong>bloquean 5 minutos</strong> antes del inicio — no se aceptan predicciones después.',
+    rule3:'Los partidos se <strong>bloquean 10 minutos</strong> antes del inicio — no se aceptan predicciones después.',
     rule4:'<strong>No se realizan devoluciones</strong> de dinero una vez confirmada la inscripción.',
     rulesModalTitle:'📋 Reglas de la Polla',understood:'ENTENDIDO ✓',
     rulesMultiSub:'Predice el marcador de cada partido. Ganas puntos según la precisión de tu predicción:',
@@ -4285,6 +4285,21 @@ async function saveDB(){
     });
   },800);
 }
+// Push ONLY the cfl/data document (pollas, matches, settings…) to Firebase.
+// Never writes cfl/users — safe to call before the users snapshot has loaded.
+function pushDataOnly(){
+  if(!window._fbSaveData)return;
+  DB._ts=Date.now();lsSave();
+  var dataPayload={
+    pollas:DB.pollas||[],matches:DB.matches||[],banners:DB.banners||{},
+    stripe:{pub:DB.stripe?DB.stripe.pub:''},settings:DB.settings||{},
+    specials:DB.specials||[],bonusQuestions:DB.bonusQuestions||[],
+    nid:DB.nid||{u:10,p:1,m:1},notifications:DB.notifications||[],
+    userChunks:Math.max(1,Math.ceil((DB.users||[]).length/50)),_ts:DB._ts
+  };
+  window._fbSaveData(dataPayload).then(function(){console.log('✅ cfl/data pushed (data-only)');})
+    .catch(function(e){console.error('data-only push failed:',e.code,e.message);});
+}
 // fbSync: only used as fallback if onSnapshot hasn't fired yet (e.g. offline start)
 function fbSync(){
   // onSnapshot handles all real-time sync — this is now a no-op fallback
@@ -4293,6 +4308,45 @@ function fbSync(){
 }
 
 // ════ WORLD CUP 2026 SEED ════
+// ════ MIGRATION: official Jornada 1 kickoff times in Miami/ET (EDT, UTC-4) ════
+// Updates ONLY the date field of existing matches (matched by team names).
+// Never touches IDs, predictions, results or any other field — safe for live data.
+function fixJornada1Times(){
+  var OFFICIAL={
+    'Mexico|South Africa'        :'2026-06-11T14:00:00-04:00',
+    'South Korea|Czechia'        :'2026-06-11T21:00:00-04:00',
+    'Canada|Bosnia-Herzegovina'  :'2026-06-12T14:00:00-04:00',
+    'USA|Paraguay'               :'2026-06-12T20:00:00-04:00',
+    'Qatar|Switzerland'          :'2026-06-13T14:00:00-04:00',
+    'Brazil|Morocco'             :'2026-06-13T17:00:00-04:00',
+    'Haiti|Scotland'             :'2026-06-13T20:00:00-04:00',
+    'Australia|Türkiye'          :'2026-06-13T23:00:00-04:00',
+    'Germany|Curacao'            :'2026-06-14T12:00:00-04:00',
+    'Netherlands|Japan'          :'2026-06-14T15:00:00-04:00',
+    'Ivory Coast|Ecuador'        :'2026-06-14T18:00:00-04:00',
+    'Sweden|Tunisia'             :'2026-06-14T21:00:00-04:00',
+    'Spain|Cape Verde'           :'2026-06-15T11:00:00-04:00',
+    'Belgium|Egypt'              :'2026-06-15T14:00:00-04:00',
+    'Saudi Arabia|Uruguay'       :'2026-06-15T17:00:00-04:00',
+    'Iran|New Zealand'           :'2026-06-15T20:00:00-04:00',
+    'France|Senegal'             :'2026-06-16T14:00:00-04:00',
+    'Iraq|Norway'                :'2026-06-16T17:00:00-04:00',
+    'Argentina|Algeria'          :'2026-06-16T20:00:00-04:00',
+    'Austria|Jordan'             :'2026-06-16T23:00:00-04:00',
+    'Portugal|DR Congo'          :'2026-06-17T12:00:00-04:00',
+    'England|Croatia'            :'2026-06-17T15:00:00-04:00',
+    'Ghana|Panama'               :'2026-06-17T18:00:00-04:00',
+    'Uzbekistan|Colombia'        :'2026-06-17T21:00:00-04:00'
+  };
+  var changed=0;
+  (DB.matches||[]).forEach(function(m){
+    var iso=OFFICIAL[m.home+'|'+m.away];
+    if(iso&&m.date!==iso){m.date=iso;changed++;}
+  });
+  if(changed>0)console.log('🕓 Jornada 1 times updated: '+changed+' matches → Miami/ET');
+  return changed;
+}
+
 function seedWC2026(){
   // ── Official FIFA World Cup 2026 draw (Dec 5, 2025) ──────────────────────────
   // Auto-detects wrong/old matches and replaces them.
@@ -4336,96 +4390,96 @@ function seedWC2026(){
   function ko(dt,stage,round){DB.matches.push({id:gid++,pollaId:pid,home:'TBD',away:'TBD',date:dt,stage:stage,round:round,result:null,homeLogo:'',awayLogo:''});}
 
   // ── GROUP A: Mexico · South Africa · South Korea · Czechia ───────────────────
-  gm('Mexico','South Africa','2026-06-11T15:00','A');
-  gm('South Korea','Czechia','2026-06-11T22:00','A');
+  gm('Mexico','South Africa','2026-06-11T14:00:00-04:00','A');
+  gm('South Korea','Czechia','2026-06-11T21:00:00-04:00','A');
   gm('Czechia','South Africa','2026-06-18T12:00','A');
   gm('Mexico','South Korea','2026-06-18T21:00','A');
   gm('Czechia','Mexico','2026-06-24T21:00','A');
   gm('South Africa','South Korea','2026-06-24T21:00','A');
 
   // ── GROUP B: Canada · Bosnia-Herzegovina · Qatar · Switzerland ───────────────
-  gm('Canada','Bosnia-Herzegovina','2026-06-12T15:00','B');
-  gm('Qatar','Switzerland','2026-06-13T15:00','B');
+  gm('Canada','Bosnia-Herzegovina','2026-06-12T14:00:00-04:00','B');
+  gm('Qatar','Switzerland','2026-06-13T14:00:00-04:00','B');
   gm('Switzerland','Bosnia-Herzegovina','2026-06-18T15:00','B');
   gm('Canada','Qatar','2026-06-18T18:00','B');
   gm('Switzerland','Canada','2026-06-24T15:00','B');
   gm('Bosnia-Herzegovina','Qatar','2026-06-24T15:00','B');
 
   // ── GROUP C: Brazil · Morocco · Haiti · Scotland ─────────────────────────────
-  gm('Brazil','Morocco','2026-06-13T18:00','C');
-  gm('Haiti','Scotland','2026-06-13T21:00','C');
+  gm('Brazil','Morocco','2026-06-13T17:00:00-04:00','C');
+  gm('Haiti','Scotland','2026-06-13T20:00:00-04:00','C');
   gm('Scotland','Morocco','2026-06-19T18:00','C');
   gm('Brazil','Haiti','2026-06-19T21:00','C');
   gm('Scotland','Brazil','2026-06-24T18:00','C');
   gm('Morocco','Haiti','2026-06-24T18:00','C');
 
   // ── GROUP D: USA · Paraguay · Australia · Türkiye ────────────────────────────
-  gm('USA','Paraguay','2026-06-12T21:00','D');
-  gm('Australia','Türkiye','2026-06-14T00:00','D');
+  gm('USA','Paraguay','2026-06-12T20:00:00-04:00','D');
+  gm('Australia','Türkiye','2026-06-13T23:00:00-04:00','D');
   gm('USA','Australia','2026-06-19T15:00','D');
   gm('Türkiye','Paraguay','2026-06-20T00:00','D');
   gm('Türkiye','USA','2026-06-25T22:00','D');
   gm('Paraguay','Australia','2026-06-25T22:00','D');
 
   // ── GROUP E: Germany · Curacao · Ivory Coast · Ecuador ───────────────────────
-  gm('Germany','Curacao','2026-06-14T13:00','E');
-  gm('Ivory Coast','Ecuador','2026-06-14T19:00','E');
+  gm('Germany','Curacao','2026-06-14T12:00:00-04:00','E');
+  gm('Ivory Coast','Ecuador','2026-06-14T18:00:00-04:00','E');
   gm('Germany','Ivory Coast','2026-06-20T16:00','E');
   gm('Ecuador','Curacao','2026-06-20T20:00','E');
   gm('Ecuador','Germany','2026-06-25T16:00','E');
   gm('Curacao','Ivory Coast','2026-06-25T16:00','E');
 
   // ── GROUP F: Netherlands · Japan · Sweden · Tunisia ──────────────────────────
-  gm('Netherlands','Japan','2026-06-14T16:00','F');
-  gm('Sweden','Tunisia','2026-06-14T22:00','F');
+  gm('Netherlands','Japan','2026-06-14T15:00:00-04:00','F');
+  gm('Sweden','Tunisia','2026-06-14T21:00:00-04:00','F');
   gm('Netherlands','Sweden','2026-06-20T13:00','F');
   gm('Tunisia','Japan','2026-06-21T00:00','F');
   gm('Japan','Sweden','2026-06-25T19:00','F');
   gm('Tunisia','Netherlands','2026-06-25T19:00','F');
 
   // ── GROUP G: Belgium · Egypt · Iran · New Zealand ────────────────────────────
-  gm('Belgium','Egypt','2026-06-15T15:00','G');
-  gm('Iran','New Zealand','2026-06-15T21:00','G');
+  gm('Belgium','Egypt','2026-06-15T14:00:00-04:00','G');
+  gm('Iran','New Zealand','2026-06-15T20:00:00-04:00','G');
   gm('Belgium','Iran','2026-06-21T15:00','G');
   gm('New Zealand','Egypt','2026-06-21T21:00','G');
   gm('Egypt','Iran','2026-06-26T23:00','G');
   gm('New Zealand','Belgium','2026-06-26T23:00','G');
 
   // ── GROUP H: Spain · Cape Verde · Saudi Arabia · Uruguay ─────────────────────
-  gm('Spain','Cape Verde','2026-06-15T12:00','H');
-  gm('Saudi Arabia','Uruguay','2026-06-15T18:00','H');
+  gm('Spain','Cape Verde','2026-06-15T11:00:00-04:00','H');
+  gm('Saudi Arabia','Uruguay','2026-06-15T17:00:00-04:00','H');
   gm('Spain','Saudi Arabia','2026-06-21T12:00','H');
   gm('Uruguay','Cape Verde','2026-06-21T18:00','H');
   gm('Cape Verde','Saudi Arabia','2026-06-26T20:00','H');
   gm('Uruguay','Spain','2026-06-26T20:00','H');
 
   // ── GROUP I: France · Senegal · Iraq · Norway ────────────────────────────────
-  gm('France','Senegal','2026-06-16T15:00','I');
-  gm('Iraq','Norway','2026-06-16T18:00','I');
+  gm('France','Senegal','2026-06-16T14:00:00-04:00','I');
+  gm('Iraq','Norway','2026-06-16T17:00:00-04:00','I');
   gm('France','Iraq','2026-06-22T17:00','I');
   gm('Norway','Senegal','2026-06-22T20:00','I');
   gm('Norway','France','2026-06-26T15:00','I');
   gm('Senegal','Iraq','2026-06-26T15:00','I');
 
   // ── GROUP J: Argentina · Algeria · Austria · Jordan ──────────────────────────
-  gm('Argentina','Algeria','2026-06-16T21:00','J');
-  gm('Austria','Jordan','2026-06-17T00:00','J');
+  gm('Argentina','Algeria','2026-06-16T20:00:00-04:00','J');
+  gm('Austria','Jordan','2026-06-16T23:00:00-04:00','J');
   gm('Argentina','Austria','2026-06-22T13:00','J');
   gm('Jordan','Algeria','2026-06-22T23:00','J');
   gm('Algeria','Austria','2026-06-27T22:00','J');
   gm('Jordan','Argentina','2026-06-27T22:00','J');
 
   // ── GROUP K: Portugal · DR Congo · Uzbekistan · Colombia ─────────────────────
-  gm('Portugal','DR Congo','2026-06-17T13:00','K');
-  gm('Uzbekistan','Colombia','2026-06-17T22:00','K');
+  gm('Portugal','DR Congo','2026-06-17T12:00:00-04:00','K');
+  gm('Uzbekistan','Colombia','2026-06-17T21:00:00-04:00','K');
   gm('Portugal','Uzbekistan','2026-06-23T13:00','K');
   gm('Colombia','DR Congo','2026-06-23T22:00','K');
   gm('Colombia','Portugal','2026-06-27T19:30','K');
   gm('DR Congo','Uzbekistan','2026-06-27T19:30','K');
 
   // ── GROUP L: England · Croatia · Ghana · Panama ───────────────────────────────
-  gm('England','Croatia','2026-06-17T16:00','L');
-  gm('Ghana','Panama','2026-06-17T19:00','L');
+  gm('England','Croatia','2026-06-17T15:00:00-04:00','L');
+  gm('Ghana','Panama','2026-06-17T18:00:00-04:00','L');
   gm('England','Ghana','2026-06-23T16:00','L');
   gm('Panama','Croatia','2026-06-23T19:00','L');
   gm('Panama','England','2026-06-27T17:00','L');
@@ -5057,6 +5111,7 @@ function startApp(){
     if(!adm){DB.users.unshift({id:1,name:'CFL Admin',email:'admin_fcnoise',pass:'FCNOISE26',role:'admin',status:'active',verified:true,points:0,photo:'',phone:'',country:'',predictions:[],payments:[]});}
     else{adm.email='admin_fcnoise';adm.pass='FCNOISE26';adm.verified=true;}
     seedWC2026();
+    fixJornada1Times(); // apply official Miami/ET kickoff times to existing matches
     seedWC2026Specials();
     cleanOldSpecials();
     lsSave();
@@ -5188,6 +5243,10 @@ window._fbOnUpdate=function(d){
   // Register listeners for extra user chunks (if > 100 players)
   var numChunks=d.userChunks||1;
   for(var ci=1;ci<numChunks;ci++){if(window._fbAddChunkListener)window._fbAddChunkListener('users_'+ci);}
+
+  // One-time: apply official Jornada 1 kickoff times (Miami/ET). Idempotent —
+  // only writes back to cloud the first time a date actually changes.
+  if(fixJornada1Times()>0)pushDataOnly();
 
   // Recalculate scores now that match results are loaded
   recalcPredictions();
@@ -5531,7 +5590,7 @@ setInterval(function(){if(typeof CU!=='undefined'&&CU&&CU.role!=='admin'){try{re
       <p><strong>CFL Fantasy</strong> es una plataforma de entretenimiento para predicciones deportivas entre amigos.</p>
       <p>1. Los pagos son voluntarios y no constituyen apuestas reguladas por ningún organismo.</p>
       <p>2. Los premios se distribuyen según los porcentajes definidos por el organizador de cada polla.</p>
-      <p>3. Las predicciones se cierran 5 minutos antes de cada partido. No se aceptan cambios después del cierre.</p>
+      <p>3. Las predicciones se cierran 10 minutos antes de cada partido. No se aceptan cambios después del cierre.</p>
       <p>4. Las decisiones del administrador sobre resultados y puntuación son definitivas.</p>
       <p>5. El uso de la plataforma implica la aceptación de estos términos.</p>
       <p>6. La plataforma no se responsabiliza por errores técnicos o pérdida de datos.</p>
