@@ -4310,11 +4310,12 @@ function fbSync(){
 }
 
 // ════ WORLD CUP 2026 SEED ════
-// ════ MIGRATION: official Jornada 1 kickoff times in Miami/ET (EDT, UTC-4) ════
-// Updates ONLY the date field of existing matches (matched by team names).
-// Never touches IDs, predictions, results or any other field — safe for live data.
-function fixJornada1Times(){
+// ════ MIGRATION: official GROUP STAGE kickoff times — COLOMBIA time (COT, UTC-5) ════
+// Miami shows +1h automatically (fmtDual). Updates ONLY the date field of existing
+// matches (matched by team names). Never touches IDs, predictions, results — safe for live data.
+function fixGroupStageTimes(){
   var OFFICIAL={
+    // ── Jornada 1 ──
     'Mexico|South Africa'        :'2026-06-11T14:00:00-05:00',
     'South Korea|Czechia'        :'2026-06-11T21:00:00-05:00',
     'Canada|Bosnia-Herzegovina'  :'2026-06-12T14:00:00-05:00',
@@ -4338,14 +4339,64 @@ function fixJornada1Times(){
     'Portugal|DR Congo'          :'2026-06-17T12:00:00-05:00',
     'England|Croatia'            :'2026-06-17T15:00:00-05:00',
     'Ghana|Panama'               :'2026-06-17T18:00:00-05:00',
-    'Uzbekistan|Colombia'        :'2026-06-17T21:00:00-05:00'
+    'Uzbekistan|Colombia'        :'2026-06-17T21:00:00-05:00',
+    // ── Jornada 2 ──
+    'Czechia|South Africa'          :'2026-06-18T11:00:00-05:00',
+    'Switzerland|Bosnia-Herzegovina':'2026-06-18T14:00:00-05:00',
+    'Canada|Qatar'                  :'2026-06-18T17:00:00-05:00',
+    'Mexico|South Korea'            :'2026-06-18T20:00:00-05:00',
+    'USA|Australia'                 :'2026-06-19T14:00:00-05:00',
+    'Scotland|Morocco'              :'2026-06-19T17:00:00-05:00',
+    'Brazil|Haiti'                  :'2026-06-19T20:00:00-05:00',
+    'Türkiye|Paraguay'              :'2026-06-19T23:00:00-05:00',
+    'Netherlands|Sweden'            :'2026-06-20T14:00:00-05:00',
+    'Germany|Ivory Coast'           :'2026-06-20T15:00:00-05:00',
+    'Ecuador|Curacao'               :'2026-06-20T19:00:00-05:00',
+    'Tunisia|Japan'                 :'2026-06-20T23:00:00-05:00',
+    'Spain|Saudi Arabia'            :'2026-06-21T11:00:00-05:00',
+    'Belgium|Iran'                  :'2026-06-21T14:00:00-05:00',
+    'Uruguay|Cape Verde'            :'2026-06-21T17:00:00-05:00',
+    'New Zealand|Egypt'             :'2026-06-21T20:00:00-05:00',
+    'Argentina|Austria'             :'2026-06-22T12:00:00-05:00',
+    'France|Iraq'                   :'2026-06-22T16:00:00-05:00',
+    'Norway|Senegal'                :'2026-06-22T19:00:00-05:00',
+    'Jordan|Algeria'                :'2026-06-22T22:00:00-05:00',
+    'Portugal|Uzbekistan'           :'2026-06-23T12:00:00-05:00',
+    'England|Ghana'                 :'2026-06-23T15:00:00-05:00',
+    'Panama|Croatia'                :'2026-06-23T18:00:00-05:00',
+    'Colombia|DR Congo'             :'2026-06-23T21:00:00-05:00',
+    // ── Jornada 3 ──
+    'Switzerland|Canada'            :'2026-06-24T14:00:00-05:00',
+    'Bosnia-Herzegovina|Qatar'      :'2026-06-24T14:00:00-05:00',
+    'Scotland|Brazil'               :'2026-06-24T17:00:00-05:00',
+    'Morocco|Haiti'                 :'2026-06-24T17:00:00-05:00',
+    'Czechia|Mexico'                :'2026-06-24T20:00:00-05:00',
+    'South Africa|South Korea'      :'2026-06-24T20:00:00-05:00',
+    'Curacao|Ivory Coast'           :'2026-06-25T15:00:00-05:00',
+    'Ecuador|Germany'               :'2026-06-25T15:00:00-05:00',
+    'Japan|Sweden'                  :'2026-06-25T18:00:00-05:00',
+    'Tunisia|Netherlands'           :'2026-06-25T18:00:00-05:00',
+    'Türkiye|USA'                   :'2026-06-25T21:00:00-05:00',
+    'Paraguay|Australia'            :'2026-06-25T21:00:00-05:00',
+    'Norway|France'                 :'2026-06-26T14:00:00-05:00',
+    'Senegal|Iraq'                  :'2026-06-26T14:00:00-05:00',
+    'Cape Verde|Saudi Arabia'       :'2026-06-26T19:00:00-05:00',
+    'Uruguay|Spain'                 :'2026-06-26T19:00:00-05:00',
+    'Egypt|Iran'                    :'2026-06-26T22:00:00-05:00',
+    'New Zealand|Belgium'           :'2026-06-26T22:00:00-05:00',
+    'Panama|England'                :'2026-06-27T16:00:00-05:00',
+    'Croatia|Ghana'                 :'2026-06-27T16:00:00-05:00',
+    'Colombia|Portugal'             :'2026-06-27T18:30:00-05:00',
+    'DR Congo|Uzbekistan'           :'2026-06-27T18:30:00-05:00',
+    'Algeria|Austria'               :'2026-06-27T21:00:00-05:00',
+    'Jordan|Argentina'              :'2026-06-27T21:00:00-05:00'
   };
   var changed=0;
   (DB.matches||[]).forEach(function(m){
     var iso=OFFICIAL[m.home+'|'+m.away];
     if(iso&&m.date!==iso){m.date=iso;changed++;}
   });
-  if(changed>0)console.log('🕓 Jornada 1 times updated: '+changed+' matches → Miami/ET');
+  if(changed>0)console.log('🕓 Group-stage times updated: '+changed+' matches → Colombia time');
   return changed;
 }
 
@@ -5113,7 +5164,7 @@ function startApp(){
     if(!adm){DB.users.unshift({id:1,name:'CFL Admin',email:'admin_fcnoise',pass:'FCNOISE26',role:'admin',status:'active',verified:true,points:0,photo:'',phone:'',country:'',predictions:[],payments:[]});}
     else{adm.email='admin_fcnoise';adm.pass='FCNOISE26';adm.verified=true;}
     seedWC2026();
-    fixJornada1Times(); // apply official Miami/ET kickoff times to existing matches
+    fixGroupStageTimes(); // apply official Colombia kickoff times to existing matches
     seedWC2026Specials();
     cleanOldSpecials();
     lsSave();
@@ -5248,7 +5299,7 @@ window._fbOnUpdate=function(d){
 
   // One-time: apply official Jornada 1 kickoff times (Miami/ET). Idempotent —
   // only writes back to cloud the first time a date actually changes.
-  if(fixJornada1Times()>0)pushDataOnly();
+  if(fixGroupStageTimes()>0)pushDataOnly();
 
   // Recalculate scores now that match results are loaded
   recalcPredictions();
