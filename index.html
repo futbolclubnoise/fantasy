@@ -781,24 +781,6 @@ function showTC(){var m=document.getElementById('tcModal');if(m)m.style.display=
             <div class="fg"><label class="fl"><span data-t="emailLabel">Email</span> <span style="color:var(--red);font-size:10px">*</span></label><input class="fi" id="pfEmail" type="email" placeholder="your@email.com" required></div>
             <div class="fg"><label class="fl"><span data-t="phoneLabel">Phone</span> <span style="color:var(--red);font-size:10px">*</span></label><input class="fi" id="pfPhone" type="tel" placeholder="+1 555 0000"></div>
             <div class="fg"><label class="fl" data-t="newPassword">New Password (optional)</label><input class="fi" id="pfPass" type="password" placeholder="Leave blank to keep current" data-t="keepPassword"></div>
-            <div class="fg"><label class="fl">🕓 <span data-t="tzLabel">Zona horaria</span></label>
-              <select class="fi" id="pfTz">
-                <option value="America/New_York">🇺🇸 Miami / Nueva York (ET)</option>
-                <option value="America/Chicago">🇺🇸 Chicago (CT)</option>
-                <option value="America/Denver">🇺🇸 Denver (MT)</option>
-                <option value="America/Los_Angeles">🇺🇸 Los Ángeles (PT)</option>
-                <option value="America/Bogota">🇨🇴 Bogotá / Lima (COT)</option>
-                <option value="America/Mexico_City">🇲🇽 Ciudad de México (CST)</option>
-                <option value="America/Caracas">🇻🇪 Caracas (VET)</option>
-                <option value="America/Santiago">🇨🇱 Santiago (CLT)</option>
-                <option value="America/Argentina/Buenos_Aires">🇦🇷 Buenos Aires (ART)</option>
-                <option value="America/Sao_Paulo">🇧🇷 São Paulo (BRT)</option>
-                <option value="America/Panama">🇵🇦 Panamá (EST)</option>
-                <option value="Europe/Madrid">🇪🇸 Madrid (CET)</option>
-                <option value="Europe/London">🇬🇧 Londres (GMT)</option>
-              </select>
-              <div style="font-size:9px;color:var(--tx3);margin-top:4px" data-t="tzHint">Los horarios de los partidos se muestran en tu zona. Por defecto: Miami.</div>
-            </div>
           </div>
         </div>
         <button class="btn btn-p" onclick="saveProfile()" data-t="saveBtn">SAVE</button>
@@ -1319,6 +1301,17 @@ function dispTz(){return (CU&&CU.tz)?CU.tz:'America/New_York';}
 function tzDateKey(iso,tz){
   try{return new Intl.DateTimeFormat('en-CA',{timeZone:tz||'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));}
   catch(e){return (iso+'').split('T')[0];}
+}
+// Match time shown in BOTH Miami (ET) and Colombia (COT) to avoid confusion
+function fmtDual(iso){
+  try{
+    var d=new Date(iso);
+    var loc=CL==='es'?'es-CO':'en-US';
+    var day=new Intl.DateTimeFormat(loc,{timeZone:'America/New_York',month:'short',day:'numeric'}).format(d);
+    var mia=new Intl.DateTimeFormat(loc,{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit'}).format(d);
+    var col=new Intl.DateTimeFormat(loc,{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit'}).format(d);
+    return day+' · '+mia+' Miami · '+col+' COL';
+  }catch(e){return fmt(iso,'America/New_York');}
 }
 
 // ═══════════ THEME ═══════════
@@ -2848,7 +2841,7 @@ function showPollaDetail(pollaId){
         html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--c2);border-radius:8px;margin-bottom:4px;font-size:10px">'
           +'<span style="display:flex;align-items:center;gap:6px">'+getFlag(m.home)+' <strong>'+m.home+'</strong> vs '+getFlag(m.away)+' <strong>'+m.away+'</strong></span>'
           +'<span style="color:'+(m.result?'var(--grn)':locked?'var(--red)':'var(--tx3)')+'">'+
-            (m.result?'✅ '+res:locked?'🔒 Locked':'⏳ '+fmt(m.date,dispTz()))
+            (m.result?'✅ '+res:locked?'🔒 Locked':'⏳ '+fmtDual(m.date))
           +'</span></div>';
       });
     });
@@ -3054,7 +3047,7 @@ function renderPInicio(){
                 <span style="font-size:18px">${getTeamFlag(m,'away')}</span>
               </div>
             </div>
-            <div style="font-size:9px;color:var(--tx2);text-align:center;margin-top:2px">${fmt(m.date,tz)}</div>
+            <div style="font-size:9px;color:var(--tx2);text-align:center;margin-top:2px">${fmtDual(m.date)}</div>
           </div>`;
         });
         html+='</div>';
@@ -3413,7 +3406,7 @@ function renderPHist(){
       html+=`<div style="display:flex;align-items:stretch;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd)">
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--tx)">${m.home} <span style="color:var(--tx2);font-weight:400">vs</span> ${m.away}</div>
-          <div style="font-size:11px;color:var(--tx2);margin-bottom:7px">${fmt(m.date,tz)}${stg?` · <span style="color:var(--tx3)">${stg}</span>`:''}</div>
+          <div style="font-size:11px;color:var(--tx2);margin-bottom:7px">${fmtDual(m.date)}${stg?` · <span style="color:var(--tx3)">${stg}</span>`:''}</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <div style="background:var(--bg4);border-radius:8px;padding:5px 11px;font-size:12px">
               <span style="color:var(--tx2);font-size:10px">${T('myPick')}</span><strong>${pr.home}–${pr.away}</strong>
@@ -3442,7 +3435,6 @@ function renderPPerfil(){
   if(document.getElementById('pfNick'))document.getElementById('pfNick').value=CU.nickname||'';
   document.getElementById('pfEmail').value=CU.email||'';
   if(document.getElementById('pfPhone'))document.getElementById('pfPhone').value=CU.phone||'';
-  if(document.getElementById('pfTz'))document.getElementById('pfTz').value=CU.tz||'America/New_York';
   document.getElementById('pfPass').value='';
   const prev=document.getElementById('pfPhPrev'),lbl=document.querySelector('#pfPhRing .ph-lbl');
   var _pfSrc=CU.photoURL||CU.photo||'';
@@ -3459,15 +3451,13 @@ function saveProfile(){
   const src=(_pfInput&&_pfInput._compressed)||'';
   if(!email){alert(T('emailRequired'));return;}
   if(!phone){alert(T('phoneRequired'));return;}
-  const tz=(document.getElementById('pfTz')||{}).value||'America/New_York';
   if(name)CU.name=name;
   CU.nickname=nick||name;
   CU.email=email;
   CU.phone=phone;
-  CU.tz=tz;
   if(pass&&pass.length>=6)CU.pass=pass;
   const dbU=DB.users.find(u=>u.id===CU.id);
-  if(dbU){dbU.name=CU.name;dbU.nickname=CU.nickname;dbU.email=CU.email;dbU.phone=CU.phone;dbU.tz=CU.tz;if(pass&&pass.length>=6)dbU.pass=CU.pass;}
+  if(dbU){dbU.name=CU.name;dbU.nickname=CU.nickname;dbU.email=CU.email;dbU.phone=CU.phone;if(pass&&pass.length>=6)dbU.pass=CU.pass;}
   if(src&&src.startsWith('data:image')){
     CU.photo=src;saveUserPhoto(CU.id,src);
     if(dbU)dbU.photo=src;
@@ -3651,7 +3641,7 @@ function openModal(pollaId){
     var aInline=m.awayLogo?'<img src="'+m.awayLogo+'" onerror="this.style.display=\'none\'" style="width:24px;height:24px;object-fit:contain;border-radius:4px;flex-shrink:0">':( aFlag?'<span style="font-size:24px;line-height:1;flex-shrink:0">'+aFlag+'</span>':'');
     var grpBadge=m.round?'<span style="font-size:8px;font-weight:700;background:var(--org2);color:var(--org);border:1px solid var(--org3);border-radius:4px;padding:1px 5px;letter-spacing:.5px">'+m.round+'</span>':'';
     var c='<div id="mc_'+m.id+'" style="background:var(--c2);border-radius:9px;padding:8px 10px;margin-bottom:5px;border:1px solid var(--bd)">';
-    c+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+grpBadge+'<span style="font-size:9px;color:var(--tx2);font-weight:600">'+fmt(m.date,tz)+'</span></div>';
+    c+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+grpBadge+'<span style="font-size:9px;color:var(--tx2);font-weight:600">'+fmtDual(m.date)+'</span></div>';
     if(m.result){
       var resColor=pr&&pr.pts>0?'var(--grn)':'var(--red2)';
       c+='<div style="display:flex;align-items:center;gap:6px">'
@@ -4072,8 +4062,7 @@ var LD={
     specChangePrompt:'Change prediction:\n',
     usernameEmail:'Username / Email',passwordLabel:'Password',loginBtn:'SIGN IN',photoOptional:'Photo (optional)',yourName:'Your name',fullName:'Full Name',emailLabel:'Email',minChars:'Min 6 characters',phoneLabel:'Phone',registerBtn:'CREATE ACCOUNT',myHistory:'My History',myProfile:'My Profile',changePhoto:'Change photo',nickname:'Nickname',nicknameHint:'(shown in ranking)',yourFullName:'Your full name',shortName:'Short name shown to others',newPassword:'New Password (optional)',keepPassword:'Leave blank to keep current',saveBtn:'SAVE',profileUpdated:'Profile updated ✓',poolLabel:'Pool',paymentsStripe:'Payments securely processed by Stripe',accountCreated:'Account created! You can sign in now.',allFieldsRequired:'All fields are required.',emailRequired:'Email is required',phoneRequired:'Phone is required',passTooShort:'Password must be at least 6 characters',emailExists:'Email already registered',nameEmpty:'Name cannot be empty',passMin6:'Password must be at least 6 characters',savePredsBtn:'SAVE PREDICTIONS',editProfileBtn:'SAVE CHANGES',
     forgotPass:'Forgot your password?',backToLogin:'← Back to Sign In',resetSend:'SEND RESET LINK',resetEmailLabel:'Enter your registered email',resetSent:'✅ Check your email — reset link sent!',resetEmailNotFound:'No account found with that email.',resetTitle:'Reset Password',resetNewPass:'New Password',resetConfirmPass:'Confirm Password',resetPassMismatch:'Passwords do not match.',resetPassShort:'Password must be at least 6 characters.',resetSuccess:'✅ Password updated! You can now sign in.',resetLinkExpired:'This reset link has expired. Request a new one.',resetLinkInvalid:'Invalid reset link.',
-    predEditTitle:'Ready to play?',predEditBody:"Let's go! 🏆 Enter your predictions before the matches lock.",predEditLater:'Later',predEditGo:'Go now! →',
-    tzLabel:'Time zone',tzHint:'Match times are shown in your zone. Default: Miami.'
+    predEditTitle:'Ready to play?',predEditBody:"Let's go! 🏆 Enter your predictions before the matches lock.",predEditLater:'Later',predEditGo:'Go now! →'
   },
   es:{
     login:'Ingresar',register:'Registrarse',logout:'Salir',home:'Inicio',myPools:'Mis Pools',ranking:'Ranking',history:'Mis Predicciones',profile:'Perfil',joinPool:'Unirse',specials:'Mi Top 3',save:'Guardar',points:'Puntos',position:'Posición',matches:'Partidos',predictions:'Predicciones',results:'Resultados',open:'Abierto',closed:'Cerrado',pool:'Pool',
@@ -4134,8 +4123,7 @@ var LD={
     specChangePrompt:'Cambiar predicción:\n',
     usernameEmail:'Usuario / Email',passwordLabel:'Contraseña',loginBtn:'INGRESAR',photoOptional:'Foto (opcional)',yourName:'Tu nombre',fullName:'Nombre Completo',emailLabel:'Email',minChars:'Mín. 6 caracteres',phoneLabel:'Teléfono',registerBtn:'CREAR CUENTA',myHistory:'Mi Historial',myProfile:'Mi Perfil',changePhoto:'Cambiar foto',nickname:'Apodo',nicknameHint:'(visible en ranking)',yourFullName:'Tu nombre completo',shortName:'Nombre corto visible para otros',newPassword:'Nueva Contraseña (opcional)',keepPassword:'Dejar en blanco para no cambiar',saveBtn:'GUARDAR',profileUpdated:'Perfil actualizado ✓',poolLabel:'Polla',paymentsStripe:'Pagos procesados de forma segura por Stripe',accountCreated:'¡Cuenta creada! Ya puedes ingresar.',allFieldsRequired:'Todos los campos son obligatorios.',emailRequired:'El email es obligatorio',phoneRequired:'El teléfono es obligatorio',passTooShort:'La contraseña debe tener al menos 6 caracteres',emailExists:'Este email ya está registrado',nameEmpty:'El nombre no puede estar vacío',passMin6:'La contraseña debe tener al menos 6 caracteres',savePredsBtn:'GUARDAR PREDICCIONES',editProfileBtn:'GUARDAR CAMBIOS',
     forgotPass:'¿Olvidaste tu contraseña?',backToLogin:'← Volver al inicio de sesión',resetSend:'ENVIAR LINK DE RESTABLECIMIENTO',resetEmailLabel:'Ingresa tu email registrado',resetSent:'✅ Revisa tu email — link de restablecimiento enviado!',resetEmailNotFound:'No se encontró ninguna cuenta con ese email.',resetTitle:'Restablecer Contraseña',resetNewPass:'Nueva Contraseña',resetConfirmPass:'Confirmar Contraseña',resetPassMismatch:'Las contraseñas no coinciden.',resetPassShort:'La contraseña debe tener al menos 6 caracteres.',resetSuccess:'✅ Contraseña actualizada. Ya puedes ingresar.',resetLinkExpired:'Este link expiró. Solicita uno nuevo.',resetLinkInvalid:'Link de restablecimiento inválido.',
-    predEditTitle:'¿Cómo es ahora de jugar?',predEditBody:'¡Ya puedes empezar! 🏆 Entra tus predicciones antes de que cierren los partidos.',predEditLater:'Luego',predEditGo:'¡Ir ahora! →',
-    tzLabel:'Zona horaria',tzHint:'Los horarios de los partidos se muestran en tu zona. Por defecto: Miami.'
+    predEditTitle:'¿Cómo es ahora de jugar?',predEditBody:'¡Ya puedes empezar! 🏆 Entra tus predicciones antes de que cierren los partidos.',predEditLater:'Luego',predEditGo:'¡Ir ahora! →'
   }
 };
 function T(k){return(LD[CL]||LD.en)[k]||k;}
