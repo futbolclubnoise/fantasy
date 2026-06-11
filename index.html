@@ -3701,7 +3701,9 @@ function openModal(pollaId){
   allDates.forEach(function(dateKey){
     var dayMatches=byDate[dateKey];
     var dayId='day_'+pollaId+'_'+dateKey;
-    var isOpen=(dateKey===autoDate);
+    // Remember the user's manual open/closed choice across re-renders (Firebase snapshots
+    // re-render the modal; without this the accordion would snap shut on every sync)
+    var isOpen=(window._dayOpen&&window._dayOpen.hasOwnProperty(dayId))?window._dayOpen[dayId]:(dateKey===autoDate);
     var dt=new Date(dateKey+'T12:00:00');
     var dayLabel=dt.toLocaleDateString(CL==='es'?'es':'en-US',{weekday:'long',day:'numeric',month:'long'});
     dayLabel=dayLabel.charAt(0).toUpperCase()+dayLabel.slice(1);
@@ -3712,7 +3714,7 @@ function openModal(pollaId){
       :isOpen
         ?'<span style="width:7px;height:7px;border-radius:50%;background:var(--org);display:inline-block;margin-right:6px;flex-shrink:0"></span>'
         :'<span style="width:7px;height:7px;border-radius:50%;background:var(--bd3,#555);display:inline-block;margin-right:6px;flex-shrink:0"></span>';
-    html+='<div onclick="(function(){var c=document.getElementById(\''+dayId+'\');var open=c.style.display!==\'none\';c.style.display=open?\'none\':\'block\';document.getElementById(\'arr_'+dayId+'\').textContent=open?\'▼\':\'▶\';})()" '
+    html+='<div onclick="(function(){var c=document.getElementById(\''+dayId+'\');var no=c.style.display===\'none\';c.style.display=no?\'block\':\'none\';document.getElementById(\'arr_'+dayId+'\').textContent=no?\'▼\':\'▶\';window._dayOpen=window._dayOpen||{};window._dayOpen[\''+dayId+'\']=no;})()" '
       +'style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid '+(isOpen?'var(--org3)':'var(--bd)')+';border-radius:9px;padding:8px 12px;margin:6px 0 4px;cursor:pointer;user-select:none">'
       +'<div style="display:flex;align-items:center">'+statusDot
         +'<span style="font-size:12px;font-weight:700;color:var(--tx)">'+dayLabel+'</span>'
