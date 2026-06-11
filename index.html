@@ -4313,30 +4313,30 @@ function fbSync(){
 // Never touches IDs, predictions, results or any other field — safe for live data.
 function fixJornada1Times(){
   var OFFICIAL={
-    'Mexico|South Africa'        :'2026-06-11T14:00:00-04:00',
-    'South Korea|Czechia'        :'2026-06-11T21:00:00-04:00',
-    'Canada|Bosnia-Herzegovina'  :'2026-06-12T14:00:00-04:00',
-    'USA|Paraguay'               :'2026-06-12T20:00:00-04:00',
-    'Qatar|Switzerland'          :'2026-06-13T14:00:00-04:00',
-    'Brazil|Morocco'             :'2026-06-13T17:00:00-04:00',
-    'Haiti|Scotland'             :'2026-06-13T20:00:00-04:00',
-    'Australia|Türkiye'          :'2026-06-13T23:00:00-04:00',
-    'Germany|Curacao'            :'2026-06-14T12:00:00-04:00',
-    'Netherlands|Japan'          :'2026-06-14T15:00:00-04:00',
-    'Ivory Coast|Ecuador'        :'2026-06-14T18:00:00-04:00',
-    'Sweden|Tunisia'             :'2026-06-14T21:00:00-04:00',
-    'Spain|Cape Verde'           :'2026-06-15T11:00:00-04:00',
-    'Belgium|Egypt'              :'2026-06-15T14:00:00-04:00',
-    'Saudi Arabia|Uruguay'       :'2026-06-15T17:00:00-04:00',
-    'Iran|New Zealand'           :'2026-06-15T20:00:00-04:00',
-    'France|Senegal'             :'2026-06-16T14:00:00-04:00',
-    'Iraq|Norway'                :'2026-06-16T17:00:00-04:00',
-    'Argentina|Algeria'          :'2026-06-16T20:00:00-04:00',
-    'Austria|Jordan'             :'2026-06-16T23:00:00-04:00',
-    'Portugal|DR Congo'          :'2026-06-17T12:00:00-04:00',
-    'England|Croatia'            :'2026-06-17T15:00:00-04:00',
-    'Ghana|Panama'               :'2026-06-17T18:00:00-04:00',
-    'Uzbekistan|Colombia'        :'2026-06-17T21:00:00-04:00'
+    'Mexico|South Africa'        :'2026-06-11T14:00:00-05:00',
+    'South Korea|Czechia'        :'2026-06-11T21:00:00-05:00',
+    'Canada|Bosnia-Herzegovina'  :'2026-06-12T14:00:00-05:00',
+    'USA|Paraguay'               :'2026-06-12T20:00:00-05:00',
+    'Qatar|Switzerland'          :'2026-06-13T14:00:00-05:00',
+    'Brazil|Morocco'             :'2026-06-13T17:00:00-05:00',
+    'Haiti|Scotland'             :'2026-06-13T20:00:00-05:00',
+    'Australia|Türkiye'          :'2026-06-13T23:00:00-05:00',
+    'Germany|Curacao'            :'2026-06-14T12:00:00-05:00',
+    'Netherlands|Japan'          :'2026-06-14T15:00:00-05:00',
+    'Ivory Coast|Ecuador'        :'2026-06-14T18:00:00-05:00',
+    'Sweden|Tunisia'             :'2026-06-14T21:00:00-05:00',
+    'Spain|Cape Verde'           :'2026-06-15T11:00:00-05:00',
+    'Belgium|Egypt'              :'2026-06-15T14:00:00-05:00',
+    'Saudi Arabia|Uruguay'       :'2026-06-15T17:00:00-05:00',
+    'Iran|New Zealand'           :'2026-06-15T20:00:00-05:00',
+    'France|Senegal'             :'2026-06-16T14:00:00-05:00',
+    'Iraq|Norway'                :'2026-06-16T17:00:00-05:00',
+    'Argentina|Algeria'          :'2026-06-16T20:00:00-05:00',
+    'Austria|Jordan'             :'2026-06-16T23:00:00-05:00',
+    'Portugal|DR Congo'          :'2026-06-17T12:00:00-05:00',
+    'England|Croatia'            :'2026-06-17T15:00:00-05:00',
+    'Ghana|Panama'               :'2026-06-17T18:00:00-05:00',
+    'Uzbekistan|Colombia'        :'2026-06-17T21:00:00-05:00'
   };
   var changed=0;
   (DB.matches||[]).forEach(function(m){
@@ -4390,96 +4390,96 @@ function seedWC2026(){
   function ko(dt,stage,round){DB.matches.push({id:gid++,pollaId:pid,home:'TBD',away:'TBD',date:dt,stage:stage,round:round,result:null,homeLogo:'',awayLogo:''});}
 
   // ── GROUP A: Mexico · South Africa · South Korea · Czechia ───────────────────
-  gm('Mexico','South Africa','2026-06-11T14:00:00-04:00','A');
-  gm('South Korea','Czechia','2026-06-11T21:00:00-04:00','A');
+  gm('Mexico','South Africa','2026-06-11T14:00:00-05:00','A');
+  gm('South Korea','Czechia','2026-06-11T21:00:00-05:00','A');
   gm('Czechia','South Africa','2026-06-18T12:00','A');
   gm('Mexico','South Korea','2026-06-18T21:00','A');
   gm('Czechia','Mexico','2026-06-24T21:00','A');
   gm('South Africa','South Korea','2026-06-24T21:00','A');
 
   // ── GROUP B: Canada · Bosnia-Herzegovina · Qatar · Switzerland ───────────────
-  gm('Canada','Bosnia-Herzegovina','2026-06-12T14:00:00-04:00','B');
-  gm('Qatar','Switzerland','2026-06-13T14:00:00-04:00','B');
+  gm('Canada','Bosnia-Herzegovina','2026-06-12T14:00:00-05:00','B');
+  gm('Qatar','Switzerland','2026-06-13T14:00:00-05:00','B');
   gm('Switzerland','Bosnia-Herzegovina','2026-06-18T15:00','B');
   gm('Canada','Qatar','2026-06-18T18:00','B');
   gm('Switzerland','Canada','2026-06-24T15:00','B');
   gm('Bosnia-Herzegovina','Qatar','2026-06-24T15:00','B');
 
   // ── GROUP C: Brazil · Morocco · Haiti · Scotland ─────────────────────────────
-  gm('Brazil','Morocco','2026-06-13T17:00:00-04:00','C');
-  gm('Haiti','Scotland','2026-06-13T20:00:00-04:00','C');
+  gm('Brazil','Morocco','2026-06-13T17:00:00-05:00','C');
+  gm('Haiti','Scotland','2026-06-13T20:00:00-05:00','C');
   gm('Scotland','Morocco','2026-06-19T18:00','C');
   gm('Brazil','Haiti','2026-06-19T21:00','C');
   gm('Scotland','Brazil','2026-06-24T18:00','C');
   gm('Morocco','Haiti','2026-06-24T18:00','C');
 
   // ── GROUP D: USA · Paraguay · Australia · Türkiye ────────────────────────────
-  gm('USA','Paraguay','2026-06-12T20:00:00-04:00','D');
-  gm('Australia','Türkiye','2026-06-13T23:00:00-04:00','D');
+  gm('USA','Paraguay','2026-06-12T20:00:00-05:00','D');
+  gm('Australia','Türkiye','2026-06-13T23:00:00-05:00','D');
   gm('USA','Australia','2026-06-19T15:00','D');
   gm('Türkiye','Paraguay','2026-06-20T00:00','D');
   gm('Türkiye','USA','2026-06-25T22:00','D');
   gm('Paraguay','Australia','2026-06-25T22:00','D');
 
   // ── GROUP E: Germany · Curacao · Ivory Coast · Ecuador ───────────────────────
-  gm('Germany','Curacao','2026-06-14T12:00:00-04:00','E');
-  gm('Ivory Coast','Ecuador','2026-06-14T18:00:00-04:00','E');
+  gm('Germany','Curacao','2026-06-14T12:00:00-05:00','E');
+  gm('Ivory Coast','Ecuador','2026-06-14T18:00:00-05:00','E');
   gm('Germany','Ivory Coast','2026-06-20T16:00','E');
   gm('Ecuador','Curacao','2026-06-20T20:00','E');
   gm('Ecuador','Germany','2026-06-25T16:00','E');
   gm('Curacao','Ivory Coast','2026-06-25T16:00','E');
 
   // ── GROUP F: Netherlands · Japan · Sweden · Tunisia ──────────────────────────
-  gm('Netherlands','Japan','2026-06-14T15:00:00-04:00','F');
-  gm('Sweden','Tunisia','2026-06-14T21:00:00-04:00','F');
+  gm('Netherlands','Japan','2026-06-14T15:00:00-05:00','F');
+  gm('Sweden','Tunisia','2026-06-14T21:00:00-05:00','F');
   gm('Netherlands','Sweden','2026-06-20T13:00','F');
   gm('Tunisia','Japan','2026-06-21T00:00','F');
   gm('Japan','Sweden','2026-06-25T19:00','F');
   gm('Tunisia','Netherlands','2026-06-25T19:00','F');
 
   // ── GROUP G: Belgium · Egypt · Iran · New Zealand ────────────────────────────
-  gm('Belgium','Egypt','2026-06-15T14:00:00-04:00','G');
-  gm('Iran','New Zealand','2026-06-15T20:00:00-04:00','G');
+  gm('Belgium','Egypt','2026-06-15T14:00:00-05:00','G');
+  gm('Iran','New Zealand','2026-06-15T20:00:00-05:00','G');
   gm('Belgium','Iran','2026-06-21T15:00','G');
   gm('New Zealand','Egypt','2026-06-21T21:00','G');
   gm('Egypt','Iran','2026-06-26T23:00','G');
   gm('New Zealand','Belgium','2026-06-26T23:00','G');
 
   // ── GROUP H: Spain · Cape Verde · Saudi Arabia · Uruguay ─────────────────────
-  gm('Spain','Cape Verde','2026-06-15T11:00:00-04:00','H');
-  gm('Saudi Arabia','Uruguay','2026-06-15T17:00:00-04:00','H');
+  gm('Spain','Cape Verde','2026-06-15T11:00:00-05:00','H');
+  gm('Saudi Arabia','Uruguay','2026-06-15T17:00:00-05:00','H');
   gm('Spain','Saudi Arabia','2026-06-21T12:00','H');
   gm('Uruguay','Cape Verde','2026-06-21T18:00','H');
   gm('Cape Verde','Saudi Arabia','2026-06-26T20:00','H');
   gm('Uruguay','Spain','2026-06-26T20:00','H');
 
   // ── GROUP I: France · Senegal · Iraq · Norway ────────────────────────────────
-  gm('France','Senegal','2026-06-16T14:00:00-04:00','I');
-  gm('Iraq','Norway','2026-06-16T17:00:00-04:00','I');
+  gm('France','Senegal','2026-06-16T14:00:00-05:00','I');
+  gm('Iraq','Norway','2026-06-16T17:00:00-05:00','I');
   gm('France','Iraq','2026-06-22T17:00','I');
   gm('Norway','Senegal','2026-06-22T20:00','I');
   gm('Norway','France','2026-06-26T15:00','I');
   gm('Senegal','Iraq','2026-06-26T15:00','I');
 
   // ── GROUP J: Argentina · Algeria · Austria · Jordan ──────────────────────────
-  gm('Argentina','Algeria','2026-06-16T20:00:00-04:00','J');
-  gm('Austria','Jordan','2026-06-16T23:00:00-04:00','J');
+  gm('Argentina','Algeria','2026-06-16T20:00:00-05:00','J');
+  gm('Austria','Jordan','2026-06-16T23:00:00-05:00','J');
   gm('Argentina','Austria','2026-06-22T13:00','J');
   gm('Jordan','Algeria','2026-06-22T23:00','J');
   gm('Algeria','Austria','2026-06-27T22:00','J');
   gm('Jordan','Argentina','2026-06-27T22:00','J');
 
   // ── GROUP K: Portugal · DR Congo · Uzbekistan · Colombia ─────────────────────
-  gm('Portugal','DR Congo','2026-06-17T12:00:00-04:00','K');
-  gm('Uzbekistan','Colombia','2026-06-17T21:00:00-04:00','K');
+  gm('Portugal','DR Congo','2026-06-17T12:00:00-05:00','K');
+  gm('Uzbekistan','Colombia','2026-06-17T21:00:00-05:00','K');
   gm('Portugal','Uzbekistan','2026-06-23T13:00','K');
   gm('Colombia','DR Congo','2026-06-23T22:00','K');
   gm('Colombia','Portugal','2026-06-27T19:30','K');
   gm('DR Congo','Uzbekistan','2026-06-27T19:30','K');
 
   // ── GROUP L: England · Croatia · Ghana · Panama ───────────────────────────────
-  gm('England','Croatia','2026-06-17T15:00:00-04:00','L');
-  gm('Ghana','Panama','2026-06-17T18:00:00-04:00','L');
+  gm('England','Croatia','2026-06-17T15:00:00-05:00','L');
+  gm('Ghana','Panama','2026-06-17T18:00:00-05:00','L');
   gm('England','Ghana','2026-06-23T16:00','L');
   gm('Panama','Croatia','2026-06-23T19:00','L');
   gm('Panama','England','2026-06-27T17:00','L');
