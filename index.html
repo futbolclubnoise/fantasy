@@ -1093,6 +1093,7 @@ function showTC(){var m=document.getElementById('tcModal');if(m)m.style.display=
       </div>
       <div class="card">
         <div class="ct" style="display:flex;align-items:center;justify-content:space-between"><span><div class="ct-dot ct-dot-g" style="display:inline-block"></div> <span id="admUsersTitle">Registered Players</span></span><span id="admUsersCount" style="font-size:10px;color:var(--tx3);font-weight:400"></span></div>
+        <div id="admPaidChips" style="display:flex;gap:6px;margin-bottom:10px"></div>
         <div style="overflow-x:auto">
           <table class="utbl" id="usersTable">
             <thead>
@@ -2649,9 +2650,29 @@ function renderAdmPoolCards(){
   });
   cont.innerHTML=cards;
 }
+function setUserPaidFilter(v){
+  DB.userPaidFilter=v;
+  renderAdmUsers();
+}
+function renderAdmPaidChips(){
+  var cont=document.getElementById('admPaidChips');if(!cont)return;
+  var cur=DB.userPaidFilter||'all';
+  var opts=[{v:'all',lbl:'Todos'},{v:'paid',lbl:'✅ Pagaron'},{v:'unpaid',lbl:'⏳ No pagaron'}];
+  cont.innerHTML=opts.map(function(o){
+    var sel=cur===o.v;
+    return '<button onclick="setUserPaidFilter(\''+o.v+'\')" style="cursor:pointer;font-size:10px;font-weight:600;font-family:Poppins,sans-serif;padding:6px 12px;border-radius:20px;border:1.5px solid '+(sel?'var(--org3)':'var(--bd)')+';background:'+(sel?'var(--org2)':'var(--bg4)')+';color:'+(sel?'var(--org)':'var(--tx2)')+'">'+o.lbl+'</button>';
+  }).join('');
+}
+// Does this player count as "paid"? Pool-scoped if a pool is selected, else any pool.
+function userIsPaid(u,poolFilter){
+  if(poolFilter!=null)return hasPaidPool(u,poolFilter);
+  return (u.payments||[]).some(function(p){return p.status==='succeeded';});
+}
 function renderAdmUsers(){
   renderAdmPoolCards();
+  renderAdmPaidChips();
   var poolFilter=DB.userPoolFilter==null?null:DB.userPoolFilter;
+  var paidFilter=DB.userPaidFilter||'all';
   var filterPol=poolFilter!=null?DB.pollas.find(function(p){return p.id===poolFilter;}):null;
   // Update title + count
   var titleEl=document.getElementById('admUsersTitle');
@@ -2662,11 +2683,20 @@ function renderAdmUsers(){
     if(!th)return;
     th.className=col===c?(dir==='asc'?'sort-asc':'sort-desc'):'';
   });
-  // Apply pool filter: only players who actually PAID the selected pool
+  // Filter by pool + paid/unpaid status.
+  // paid = userIsPaid (pool-scoped if a pool is selected, else any pool).
   var baseUsers=DB.users.filter(function(u){
-    if(poolFilter==null)return true;
+    var paid=userIsPaid(u,poolFilter);
+    if(poolFilter!=null){
+      if(u.role==='admin')return false;
+      // Pool selected: default (all/paid) shows that pool's payers; unpaid shows non-payers of that pool
+      if(paidFilter==='unpaid')return !paid;
+      return paid;
+    }
+    // No pool selected: apply status filter globally
+    if(paidFilter==='all')return true;
     if(u.role==='admin')return false;
-    return hasPaidPool(u,poolFilter);
+    return paidFilter==='paid'?paid:!paid;
   });
   var cntEl=document.getElementById('admUsersCount');
   if(cntEl)cntEl.textContent=baseUsers.filter(function(u){return u.role!=='admin';}).length+' jugador(es)';
@@ -3288,8 +3318,7 @@ function renderPRanking(){
   }).sort(function(a,b){return b.pts-a.pts;});
   var displayName=function(u){return u.nickname||u.name;};
   var iMePaid=isPlayerPaid(CU,pollaId);
-  var rows=ranked.map(function(r,i){
-    var isMe=r.u.id===CU.id;
+  var rowHtml=function(r,i,isMe){
     var pc=i===0?'a':i===1?'b':i===2?'c':'';
     var sym=i===0?'◆':i===1?'◇':i===2?'▸':(i+1)+'.';
     return'<div class="t5-r" style="'+(isMe?'background:var(--org2);border-radius:10px;margin:3px 0;padding:8px 6px;':'padding:6px;')+'" onclick="showPlayerProfile('+r.u.id+')">'
@@ -3301,7 +3330,16 @@ function renderPRanking(){
       +'</div>'
       +'<div style="font-family:\'Kallisto\',sans-serif;font-weight:500;font-size:16px;color:'+(isMe?'var(--org)':'var(--tx2)')+'">'+r.pts+'<span style="font-size:8px;color:var(--tx3);font-family:\'Poppins\',sans-serif"> pts</span></div>'
       +'</div>';
-  }).join('')||empty(T('noPlayers'));
+  };
+  // Top 10 by points (highest first)
+  var top10=ranked.slice(0,10);
+  var rows=top10.map(function(r,i){return rowHtml(r,i,r.u.id===CU.id);}).join('')||empty(T('noPlayers'));
+  // If the current player is paid but ranked beyond top 10, show their real position below
+  var myRankIdx=ranked.findIndex(function(r){return r.u.id===CU.id;});
+  if(myRankIdx>=10){
+    rows+='<div style="text-align:center;color:var(--tx3);font-size:14px;line-height:1;margin:4px 0">···</div>'
+      +rowHtml(ranked[myRankIdx],myRankIdx,true);
+  }
   // CTA for unpaid player
   var cta='';
   if(!iMePaid&&pol.status==='open'){
