@@ -3893,12 +3893,12 @@ function matchIsLocked(m){
   if(m.result)return true; // already has result
   var kickoff=new Date(m.date).getTime();
   var now=Date.now();
-  return now >= kickoff - (2*60*60*1000); // 2 hours before
+  return now >= kickoff - (5*60*1000); // 5 minutes before
 }
 function timeUntilLock(m){
   if(!m.date)return '';
   var kickoff=new Date(m.date).getTime();
-  var diff=kickoff-(2*60*60*1000)-Date.now();
+  var diff=kickoff-(5*60*1000)-Date.now();
   if(diff<=0)return T('locked');
   var h=Math.floor(diff/3600000);
   var min=Math.floor((diff%3600000)/60000);
@@ -3912,7 +3912,7 @@ function savePreds(){
   const ms=DB.matches.filter(m=>m.pollaId===activePolla);
   let saved=0;
   ms.forEach(m=>{
-    if(matchIsLocked(m))return; // use same 2h cutoff as saveOnePred
+    if(matchIsLocked(m))return; // use same 5min cutoff as saveOnePred
     const h=document.getElementById('ph_'+m.id),a=document.getElementById('pa_'+m.id);
     if(!h||!a||h.value===''||a.value==='')return;
     const existingPr=CU.predictions.find(p=>p.matchId===m.id);
@@ -4019,7 +4019,7 @@ var LD={
     rulesPrizesTitle:'🏆 Prizes',rulesGeneralTitle:'📌 General Rules',
     rule1:'Prizes are awarded to <strong>1st, 2nd and 3rd place</strong> by total points.',
     rule2:'In case of a <strong>tie</strong>, the prize is split equally among tied players.',
-    rule3:'Matches are <strong>locked 2 hours</strong> before kickoff — no predictions accepted after.',
+    rule3:'Matches are <strong>locked 5 minutes</strong> before kickoff — no predictions accepted after.',
     rule4:'<strong>No refunds</strong> are issued once registration is confirmed.',
     rulesModalTitle:'📋 Pool Rules',understood:'GOT IT ✓',
     rulesMultiSub:'Predict the score of each match. Earn points based on accuracy:',
@@ -4080,7 +4080,7 @@ var LD={
     rulesPrizesTitle:'🏆 Premios',rulesGeneralTitle:'📌 Reglas Generales',
     rule1:'Los premios se entregan al <strong>1°, 2° y 3° lugar</strong> según puntos acumulados.',
     rule2:'En caso de <strong>empate de puntos</strong>, el premio se reparte en partes iguales entre los jugadores empatados.',
-    rule3:'Los partidos se <strong>bloquean 2 horas</strong> antes del inicio — no se aceptan predicciones después.',
+    rule3:'Los partidos se <strong>bloquean 5 minutos</strong> antes del inicio — no se aceptan predicciones después.',
     rule4:'<strong>No se realizan devoluciones</strong> de dinero una vez confirmada la inscripción.',
     rulesModalTitle:'📋 Reglas de la Polla',understood:'ENTENDIDO ✓',
     rulesMultiSub:'Predice el marcador de cada partido. Ganas puntos según la precisión de tu predicción:',
@@ -5511,7 +5511,7 @@ setInterval(function(){if(typeof CU!=='undefined'&&CU&&CU.role!=='admin'){try{re
       <p><strong>CFL Fantasy</strong> es una plataforma de entretenimiento para predicciones deportivas entre amigos.</p>
       <p>1. Los pagos son voluntarios y no constituyen apuestas reguladas por ningún organismo.</p>
       <p>2. Los premios se distribuyen según los porcentajes definidos por el organizador de cada polla.</p>
-      <p>3. Las predicciones se cierran 2 horas antes de cada partido. No se aceptan cambios después del cierre.</p>
+      <p>3. Las predicciones se cierran 5 minutos antes de cada partido. No se aceptan cambios después del cierre.</p>
       <p>4. Las decisiones del administrador sobre resultados y puntuación son definitivas.</p>
       <p>5. El uso de la plataforma implica la aceptación de estos términos.</p>
       <p>6. La plataforma no se responsabiliza por errores técnicos o pérdida de datos.</p>
