@@ -2361,6 +2361,24 @@ function renderAdmPremios(){
       }else{
         prizeSection='<p style="font-size:10px;color:var(--tx3)">Polla gratuita — sin pool monetario</p>';
       }
+      // ── Full ranking: ALL paid players in this pool ──────────────────
+      var rankSection='';
+      if(ranked.length){
+        var rrows='';
+        ranked.forEach(function(u,i){
+          var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
+          var isTop3=i<3;
+          rrows+='<tr'+(isTop3?' style="background:var(--bg3)"':'')+'>'
+            +'<td style="font-family:Kallisto,sans-serif;font-weight:500;font-size:13px;width:34px;text-align:center">'+medal+'</td>'
+            +'<td><div style="display:flex;align-items:center;gap:7px">'+avEl(u)+' '+(u.nickname||u.name)+'</div></td>'
+            +'<td style="font-family:Kallisto,sans-serif;font-weight:500;text-align:right;color:var(--org)">'+u.pollaPts+'</td>'
+            +'</tr>';
+        });
+        rankSection='<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)">'
+          +'<div style="font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">🏆 Ranking completo · '+ranked.length+' jugador(es)</div>'
+          +'<table class="prize-tbl"><thead><tr><th style="width:34px">Pos</th><th>Jugador</th><th style="text-align:right">Pts</th></tr></thead><tbody>'+rrows+'</tbody></table>'
+          +'</div>';
+      }
       // ── Pool calculator ────────────────────────────────────────────
       var calcSection='';
       if(typeof calculatePool==='function'&&pol.fee>0){
@@ -2419,6 +2437,7 @@ function renderAdmPremios(){
         +'</div>'
         +prizeSection
         +calcSection
+        +rankSection
         +'</div>';
     });
   }
