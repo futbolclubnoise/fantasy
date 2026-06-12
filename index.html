@@ -3351,15 +3351,8 @@ function renderPRanking(){
       +'<div style="font-family:\'Kallisto\',sans-serif;font-weight:500;font-size:16px;color:'+(isMe?'var(--org)':'var(--tx2)')+'">'+r.pts+'<span style="font-size:8px;color:var(--tx3);font-family:\'Poppins\',sans-serif"> pts</span></div>'
       +'</div>';
   };
-  // Top 10 by points (highest first)
-  var top10=ranked.slice(0,10);
-  var rows=top10.map(function(r,i){return rowHtml(r,i,r.u.id===CU.id);}).join('')||empty(T('noPlayers'));
-  // If the current player is paid but ranked beyond top 10, show their real position below
-  var myRankIdx=ranked.findIndex(function(r){return r.u.id===CU.id;});
-  if(myRankIdx>=10){
-    rows+='<div style="text-align:center;color:var(--tx3);font-size:14px;line-height:1;margin:4px 0">···</div>'
-      +rowHtml(ranked[myRankIdx],myRankIdx,true);
-  }
+  // Full ranking — ALL players, highest points first
+  var rows=ranked.map(function(r,i){return rowHtml(r,i,r.u.id===CU.id);}).join('')||empty(T('noPlayers'));
   // CTA for unpaid player
   var cta='';
   if(!iMePaid&&pol.status==='open'){
