@@ -3696,7 +3696,9 @@ function openModal(pollaId){
   // ── Group ALL matches by calendar date (group stage + knockout) ──────────
   var byDate={};
   ms.forEach(function(m){
-    var d=m.date?tzDateKey(m.date,dispTz()):'sin-fecha';
+    // Group by COLOMBIA calendar day (pool reference) — a 11pm COL match that is
+    // 12am Miami the next day still appears under its Colombia date, not Miami's.
+    var d=m.date?tzDateKey(m.date,'America/Bogota'):'sin-fecha';
     if(!byDate[d])byDate[d]=[];
     byDate[d].push(m);
   });
