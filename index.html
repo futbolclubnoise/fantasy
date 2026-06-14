@@ -2173,20 +2173,32 @@ function renderAdmPartidos(){
       matches.forEach(m=>{
         const stg=stageLabel(m.stage)||m.stage||'';
         const stgCss=STAGE_CSS[m.stage]||'stage-league';
-        const tz=m.tz||pol?.tz||'America/New_York';
-        html+=`<div class="mc" style="margin-bottom:8px">
-          <div class="mc-hdr">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        const hF=getFlag(m.home),aF=getFlag(m.away);
+        const center=m.result
+          ? `<span style="font-family:'Kallisto',sans-serif;font-size:16px;font-weight:700;color:var(--grn);flex-shrink:0">${m.result.home}–${m.result.away}</span>`
+          : `<span style="font-size:11px;color:var(--tx3);font-weight:700;flex-shrink:0">VS</span>`;
+        html+=`<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:11px 12px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0">
               <span class="stage-badge ${stgCss}">${stg}</span>
-              ${m.round?`<span style="font-size:9px;color:var(--tx2)">${m.round}</span>`:''}
+              ${m.round?`<span style="font-size:9px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.round}</span>`:''}
             </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <div class="mc-time"><div class="date-main">${fmt(m.date,tz)}</div><div class="date-tz">${TZ_LABELS[tz]||tz}</div></div>
-              <button class="btn-xs" onclick="editMatch(${m.id})" title="Editar partido" style="padding:3px 8px">✏️</button>
+            <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+              <span style="font-size:9px;color:var(--tx3);white-space:nowrap">🕐 ${fmtDual(m.date)}</span>
+              <button onclick="editMatch(${m.id})" title="Editar" style="width:26px;height:26px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg4);color:var(--tx2);cursor:pointer;font-size:12px;flex-shrink:0">✏️</button>
             </div>
           </div>
-          ${matchTeams(m)}
-          ${m.result?`<div class="res-correct" style="font-size:10px">✅ ${m.result.home} — ${m.result.away}</div>`:''}
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0">
+              <span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
+              <span style="font-size:20px;flex-shrink:0">${hF}</span>
+            </div>
+            ${center}
+            <div style="flex:1;display:flex;align-items:center;gap:6px;min-width:0">
+              <span style="font-size:20px;flex-shrink:0">${aF}</span>
+              <span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.away}</span>
+            </div>
+          </div>
         </div>`;
       });
       html+='</div>';
@@ -2271,7 +2283,7 @@ function renderAdmRes(){
               <span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.away}</span>
             </div>
           </div>
-          <button onclick="saveResult(${m.id})" style="width:100%;padding:8px;font-size:10px;border-radius:8px;background:var(--grn);color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:700;letter-spacing:.5px;cursor:pointer">✓ GUARDAR RESULTADO</button>
+          <div style="text-align:center"><button onclick="saveResult(${m.id})" style="padding:6px 22px;font-size:10px;border-radius:8px;background:var(--grn);color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:700;letter-spacing:.5px;cursor:pointer">✓ ${CL==='es'?'GUARDAR':'SAVE'}</button></div>
         </div>`;
       });
       html+='</div>';
@@ -3054,17 +3066,21 @@ function renderPInicio(){
       html+=`<div class="card" style="padding:14px;margin-bottom:12px">
         <div class="ct" style="margin-bottom:10px"><div class="ct-dot ct-dot-o"></div>${T('ranking')}</div>`;
       if(top15.length){
+        const TBG=['rgba(255,165,0,.12)','rgba(192,192,192,.10)','rgba(180,130,80,.10)'];
+        const TBD=['rgba(255,165,0,.45)','rgba(192,192,192,.4)','rgba(180,130,80,.4)'];
         top15.slice(0,8).forEach((r,i)=>{
           const isMe=r.u.id===CU.id;
-          const sym=i===0?'◆':i===1?'◇':i===2?'▸':(i+1)+'.';
-          const pc=i===0?'a':i===1?'b':i===2?'c':'';
-          html+=`<div class="t5-r" style="${isMe?'background:var(--org2);border-radius:8px;':''}" onclick="showPlayerProfile(${r.u.id})">
-            <div class="t5-pos ${pc}" style="${isMe?'color:var(--org)':''}">${sym}</div>
-            <div style="flex:1;font-size:11px;font-weight:${isMe?700:500};color:${isMe?'var(--org)':'var(--tx2)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${displayName(r.u)}${isMe?' ◀':''}</div>
-            <div style="font-family:'Kallisto',sans-serif;font-size:13px;color:${isMe?'var(--org)':'var(--tx2)'};">${r.pts}<span style="font-size:7px;color:var(--tx3);font-family:'Poppins',sans-serif"> pts</span></div>
+          const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          const bg=isMe?'var(--org2)':(i<3?TBG[i]:'transparent');
+          const bd=isMe?'var(--org3)':(i<3?TBD[i]:'transparent');
+          html+=`<div onclick="showPlayerProfile(${r.u.id})" style="display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:10px;margin-bottom:4px;cursor:pointer;background:${bg};border:1px solid ${bd}">
+            <div style="width:22px;text-align:center;flex-shrink:0;font-family:'Kallisto',sans-serif;font-weight:700;font-size:${i<3?'15px':'12px'};color:${isMe?'var(--org)':'var(--tx3)'}">${medal||(i+1)}</div>
+            ${avEl(r.u)}
+            <div style="flex:1;min-width:0;font-size:12px;font-weight:${isMe?700:600};color:${isMe?'var(--org)':'var(--tx)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${displayName(r.u)}${isMe?` <span style="font-size:7px;background:var(--org);color:#fff;border-radius:4px;padding:1px 5px;font-family:Poppins,sans-serif;font-weight:700;vertical-align:middle">${CL==='es'?'TÚ':'YOU'}</span>`:''}</div>
+            <div style="flex-shrink:0;font-family:'Kallisto',sans-serif;font-weight:700;font-size:15px;color:${isMe||i<3?'var(--org)':'var(--tx)'}">${r.pts}<span style="font-size:7px;color:var(--tx3);font-family:'Poppins',sans-serif"> pts</span></div>
           </div>`;
         });
-        if(top15.length>8)html+=`<div style="text-align:center;font-size:10px;color:var(--tx3);padding:6px 0;cursor:pointer" onclick="pTab('ranking',document.querySelector('#S_player .stab:nth-child(4)'))">` +T('seeFullRanking')+ `</div>`;
+        if(top15.length>8)html+=`<div style="text-align:center;font-size:10px;color:var(--org);font-weight:700;padding:8px 0 2px;cursor:pointer" onclick="pTab('ranking',document.querySelector('#S_player .stab:nth-child(4)'))">` +T('seeFullRanking')+ `</div>`;
       } else {
         html+=`<div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px">${T('noScoresYet')}</div>`;
       }
