@@ -2999,17 +2999,30 @@ function renderPInicio(){
       // ── My Position + Ranking (2-col) ──
       const top15=ranked.slice(0,15);
       html+=`<div class="two-col-grid">`;
-      // Left: My Position
+      // Left: My Position — compact card
       html+=`<div class="card" style="padding:14px">
         <div class="ct" style="margin-bottom:10px"><div class="ct-dot ct-dot-g"></div>${T('myPosition')}</div>`;
       if(myRank>=0){
-        const pc=myRank===0?'a':myRank===1?'b':myRank===2?'c':'';
-        html+=`<div style="text-align:center">
-          ${avEl(CU,'av-lg')}
-          <div style="font-weight:700;font-size:13px;margin:8px 0 2px">${displayName(CU)}</div>
-          <div style="font-family:'Kallisto',sans-serif;font-size:28px;color:var(--org)">#${myRank+1}</div>
-          <div style="font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px">${T('ofTotal')} ${ranked.length}</div>
-          <div style="font-family:'Kallisto',sans-serif;font-size:22px;margin-top:6px;color:var(--g1)">${myPoolPts} <span style="font-size:9px;color:var(--tx3);font-family:Poppins,sans-serif">PTS</span></div>
+        const medal=myRank===0?'🥇':myRank===1?'🥈':myRank===2?'🥉':'';
+        html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="position:relative;flex-shrink:0">
+            ${avEl(CU,'av-lg')}
+            <div style="position:absolute;bottom:-4px;right:-4px;background:var(--org);color:#fff;font-family:'Kallisto',sans-serif;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2,#111)">${myRank+1}</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${medal} ${displayName(CU)}</div>
+            <div style="font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px">${T('ofTotal')} ${ranked.length} ${T('playersLbl')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:8px;text-align:center">
+            <div style="font-family:'Kallisto',sans-serif;font-size:20px;color:var(--org);line-height:1">#${myRank+1}</div>
+            <div style="font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${T('rank')}</div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:8px;text-align:center">
+            <div style="font-family:'Kallisto',sans-serif;font-size:20px;color:var(--g1);line-height:1">${myPoolPts}</div>
+            <div style="font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${T('pts')}</div>
+          </div>
         </div>`;
       } else {
         html+=`<div style="text-align:center;padding:14px 0;color:var(--tx3);font-size:11px">${T('enterScoresToRank')}</div>`;
@@ -3082,23 +3095,27 @@ function renderPInicio(){
         upcoming.forEach(m=>{
           const tz=dispTz();
           const myPr=CU.predictions.find(p=>p.matchId===m.id);
-          html+=`<div class="up-match" style="flex-direction:column;align-items:stretch;padding:6px 0">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
-              <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0">
-                <span style="font-size:18px">${getTeamFlag(m,'home')}</span>
-                <span style="font-size:11px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
+          const center=myPr
+            ? `<div onclick="openModal(${pol.id})" style="display:flex;align-items:center;gap:5px;background:var(--org2);border-radius:8px;padding:4px 9px;cursor:pointer;flex-shrink:0">
+                 <span style="font-family:'Kallisto',sans-serif;font-size:14px;color:var(--org);font-weight:700">${myPr.home}–${myPr.away}</span>
+                 <span style="font-size:10px;opacity:.7">✏️</span>
+               </div>`
+            : isOpen
+              ? `<button onclick="openModal(${pol.id})" style="font-size:9px;border:none;background:var(--org);color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;letter-spacing:.5px;flex-shrink:0">${T('predict')}</button>`
+              : `<span style="font-size:11px;color:var(--tx3);font-weight:700;flex-shrink:0">VS</span>`;
+          html+=`<div style="padding:9px 0;border-bottom:1px solid var(--bd)">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+                <span style="font-size:20px;flex-shrink:0">${getTeamFlag(m,'home')}</span>
+                <span style="font-size:12px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
               </div>
-              <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-                ${myPr?`<span style="font-family:'Kallisto',sans-serif;font-size:13px;color:var(--org);font-weight:700">${myPr.home}</span><span style="font-size:10px;color:var(--tx3)">–</span><span style="font-family:'Kallisto',sans-serif;font-size:13px;color:var(--org);font-weight:700">${myPr.away}</span>`
-                :isOpen?`<button onclick="openModal(${pol.id})" style="font-size:9px;border:none;background:var(--org2);color:var(--org);border-radius:6px;padding:3px 8px;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700">${T('predict')}</button>`
-                :`<span style="font-size:10px;color:var(--tx3)">vs</span>`}
-              </div>
-              <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;justify-content:flex-end">
-                <span style="font-size:11px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${m.away}</span>
-                <span style="font-size:18px">${getTeamFlag(m,'away')}</span>
+              ${center}
+              <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;justify-content:flex-end">
+                <span style="font-size:12px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${m.away}</span>
+                <span style="font-size:20px;flex-shrink:0">${getTeamFlag(m,'away')}</span>
               </div>
             </div>
-            <div style="font-size:9px;color:var(--tx2);text-align:center;margin-top:2px">${fmtDual(m.date)}</div>
+            <div style="font-size:9px;color:var(--tx3);text-align:center;margin-top:5px">🕐 ${fmtDual(m.date)}</div>
           </div>`;
         });
         html+='</div>';
@@ -3721,8 +3738,8 @@ function openModal(pollaId){
         +'</div>'
         +'<div style="text-align:center;margin-top:5px">'
         +(canEdit
-          ?'<button id="'+btnId+'" onclick="saveOnePred('+m.id+')" style="padding:4px 18px;font-size:9px;border-radius:6px;background:'+(pr!=null?'var(--grn)':'var(--tx)')+';color:'+(pr!=null?'#fff':'var(--bg)')+';border:none;font-family:Poppins,sans-serif;font-weight:700;cursor:pointer;letter-spacing:.8px">'+(pr!=null?'✅ '+T('save').toUpperCase():'💾 '+T('save').toUpperCase())+'</button>'
-          :'<span style="font-size:9px;color:var(--grn)">✅ '+T('save')+' · '+T('locked')+'</span>'
+          ?'<button id="'+btnId+'" onclick="saveOnePred('+m.id+')" style="padding:5px 20px;font-size:9px;border-radius:7px;background:'+(pr!=null?'var(--org)':'var(--grn)')+';color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:700;cursor:pointer;letter-spacing:.8px">'+(pr!=null?(CL==='es'?'✏️ EDITAR':'✏️ EDIT'):'💾 '+T('save').toUpperCase())+'</button>'
+          :'<span style="font-size:9px;color:var(--tx3);font-weight:700">'+(pr!=null?'🔒 '+(CL==='es'?'Pronóstico bloqueado':'Pick locked'):'🔒 '+T('locked'))+'</span>'
         )+'</div>';
     }
     c+='</div>';
