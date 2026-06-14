@@ -3760,10 +3760,13 @@ function openModal(pollaId){
         +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><input class="sc-inp" id="ph_'+m.id+'" type="number" min="0" value="'+hv+'" placeholder="0" style="width:58px;font-size:18px;text-align:center"'+(pr&&!canEdit?' disabled style="opacity:0.5;width:58px;font-size:18px;text-align:center"':'')+'><span style="color:var(--tx3);font-weight:700;font-size:13px">—</span><input class="sc-inp" id="pa_'+m.id+'" type="number" min="0" value="'+av+'" placeholder="0" style="width:58px;font-size:18px;text-align:center"'+(pr&&!canEdit?' disabled style="opacity:0.5;width:58px;font-size:18px;text-align:center"':'')+'></div>'
         +'<div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:5px;min-width:0">'+aInline+'<span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.away+'</span></div>'
         +'</div>'
-        +'<div style="text-align:center;margin-top:5px">'
+        +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:7px">'
         +(canEdit
-          ?'<button id="'+btnId+'" onclick="saveOnePred('+m.id+')" style="padding:5px 20px;font-size:9px;border-radius:7px;background:'+(pr!=null?'var(--org)':'var(--grn)')+';color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:700;cursor:pointer;letter-spacing:.8px">'+(pr!=null?(CL==='es'?'✏️ EDITAR':'✏️ EDIT'):'💾 '+T('save').toUpperCase())+'</button>'
-          :'<span style="font-size:9px;color:var(--tx3);font-weight:700">'+(pr!=null?'🔒 '+(CL==='es'?'Pronóstico bloqueado':'Pick locked'):'🔒 '+T('locked'))+'</span>'
+          ?(pr!=null
+            ?'<span style="font-size:10px;color:var(--grn);font-weight:700;white-space:nowrap">✅ '+(CL==='es'?'Guardado':'Saved')+'</span>'
+              +'<button id="'+btnId+'" onclick="saveOnePred('+m.id+')" style="padding:6px 16px;font-size:9px;border-radius:7px;background:var(--org);color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:700;cursor:pointer;letter-spacing:.8px">'+(CL==='es'?'✏️ ACTUALIZAR':'✏️ UPDATE')+'</button>'
+            :'<button id="'+btnId+'" onclick="saveOnePred('+m.id+')" style="padding:6px 22px;font-size:9px;border-radius:7px;background:var(--grn);color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:700;cursor:pointer;letter-spacing:.8px">💾 '+(CL==='es'?'GUARDAR':'SAVE')+'</button>')
+          :'<span style="font-size:9px;color:var(--tx3);font-weight:700;white-space:nowrap">'+(pr!=null?'🔒 '+(CL==='es'?'Guardado · bloqueado':'Saved · locked'):'🔒 '+T('locked'))+'</span>'
         )+'</div>';
     }
     c+='</div>';
