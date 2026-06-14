@@ -3710,7 +3710,9 @@ function openModal(pollaId){
         +'</div>'
         +'<div style="text-align:center;margin-top:7px"><button onclick="document.getElementById(\'predModal\').style.display=\'none\';pTab(\'inscripcion\',document.querySelector(\'#S_player .stab:nth-child(6)\'))" style="padding:5px 20px;font-size:9px;border-radius:7px;background:var(--org);color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;letter-spacing:0.5px">🔒 Join Pool</button></div>';
     } else {
-      var canEdit=!pr||(DB.settings&&DB.settings.allowPredEdit);
+      // Editable any time until the match locks (10 min before) or has a result —
+      // no admin toggle needed. Players can change their pick freely until then.
+      var canEdit=!locked&&!m.result;
       var hv=pr!=null?pr.home:'';var av=pr!=null?pr.away:'';var btnId='btn_'+m.id;
       c+='<div style="display:flex;align-items:center;gap:6px">'
         +'<div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0"><span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m.home+'</span>'+hInline+'</div>'
@@ -3938,9 +3940,8 @@ function showRulesModal(polId){
 function saveOnePred(matchId){
   if(!activePolla)return;
   var m=DB.matches.find(function(x){return x.id===matchId;});
+  // Allow editing freely until the match locks (10 min before) or has a result
   if(!m||matchIsLocked(m)||m.result)return;
-  var existingPr=CU.predictions.find(function(p){return p.matchId===matchId;});
-  if(existingPr&&!(DB.settings&&DB.settings.allowPredEdit))return;
   var h=document.getElementById('ph_'+matchId);
   var a=document.getElementById('pa_'+matchId);
   if(!h||!a||h.value===''||a.value===''){
@@ -3982,11 +3983,9 @@ function savePreds(){
   const ms=DB.matches.filter(m=>m.pollaId===activePolla);
   let saved=0;
   ms.forEach(m=>{
-    if(matchIsLocked(m))return; // use same 10min cutoff as saveOnePred
+    if(matchIsLocked(m))return; // locked 10 min before kickoff or once a result exists
     const h=document.getElementById('ph_'+m.id),a=document.getElementById('pa_'+m.id);
     if(!h||!a||h.value===''||a.value==='')return;
-    const existingPr=CU.predictions.find(p=>p.matchId===m.id);
-    if(existingPr&&!(DB.settings&&DB.settings.allowPredEdit))return;
     const pr={matchId:m.id,pollaId:activePolla,home:parseInt(h.value),away:parseInt(a.value),pts:0,correct:false,type:'pending',savedAt:Date.now()};
     const idx=CU.predictions.findIndex(p=>p.matchId===m.id);
     if(idx>=0)CU.predictions[idx]=pr;else CU.predictions.push(pr);
