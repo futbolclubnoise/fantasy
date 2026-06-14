@@ -2245,36 +2245,33 @@ function renderAdmRes(){
       <div id="${gid}">`;
       matches.forEach(m=>{
         const stg=stageLabel(m.stage)||'';
-        const tz=m.tz||pol?.tz||'America/New_York';
         const hFlag=getFlag(m.home),aFlag=getFlag(m.away);
-        const hI=m.homeLogo?`<img src="${m.homeLogo}" onerror="this.style.display='none'" style="width:22px;height:22px;object-fit:contain;border-radius:4px;flex-shrink:0">`:(hFlag?`<span style="font-size:22px;line-height:1;flex-shrink:0">${hFlag}</span>`:'');
-        const aI=m.awayLogo?`<img src="${m.awayLogo}" onerror="this.style.display='none'" style="width:22px;height:22px;object-fit:contain;border-radius:4px;flex-shrink:0">`:(aFlag?`<span style="font-size:22px;line-height:1;flex-shrink:0">${aFlag}</span>`:'');
-        html+=`<div class="mc" style="margin-bottom:8px">
-          <div class="mc-hdr">
-            <div style="display:flex;align-items:center;gap:5px">
+        const hI=m.homeLogo?`<img src="${m.homeLogo}" onerror="this.style.display='none'" style="width:24px;height:24px;object-fit:contain;border-radius:4px;flex-shrink:0">`:(hFlag?`<span style="font-size:24px;line-height:1;flex-shrink:0">${hFlag}</span>`:'');
+        const aI=m.awayLogo?`<img src="${m.awayLogo}" onerror="this.style.display='none'" style="width:24px;height:24px;object-fit:contain;border-radius:4px;flex-shrink:0">`:(aFlag?`<span style="font-size:24px;line-height:1;flex-shrink:0">${aFlag}</span>`:'');
+        html+=`<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0">
               <span class="stage-badge ${STAGE_CSS[m.stage]||'stage-league'}">${stg}</span>
-              ${m.round?`<span style="font-size:9px;color:var(--tx2)">${m.round}</span>`:''}
+              ${m.round?`<span style="font-size:9px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.round}</span>`:''}
             </div>
-            <div class="mc-time"><div class="date-main">${fmt(m.date,tz)}</div></div>
+            <span style="font-size:9px;color:var(--tx3);white-space:nowrap;flex-shrink:0">🕐 ${fmtDual(m.date)}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-            <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0">
-              <span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0">
+              <span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
               ${hI}
             </div>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-              <input class="sc-inp" id="rh${m.id}" type="number" min="0" placeholder="0" style="width:58px;font-size:18px">
+              <input class="sc-inp" id="rh${m.id}" type="number" min="0" placeholder="0" style="width:54px;font-size:18px">
               <span style="color:var(--tx3);font-weight:700;font-size:13px">—</span>
-              <input class="sc-inp" id="ra${m.id}" type="number" min="0" placeholder="0" style="width:58px;font-size:18px">
+              <input class="sc-inp" id="ra${m.id}" type="number" min="0" placeholder="0" style="width:54px;font-size:18px">
             </div>
-            <div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:5px;min-width:0">
+            <div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:6px;min-width:0">
               ${aI}
-              <span style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.away}</span>
+              <span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.away}</span>
             </div>
           </div>
-          <div style="text-align:center">
-            <button onclick="saveResult(${m.id})" style="padding:5px 20px;font-size:9px;border-radius:7px;background:var(--grn2);color:var(--grn);border:1px solid var(--grn3);font-family:Poppins,sans-serif;font-weight:600;cursor:pointer">✓ Save Result</button>
-          </div>
+          <button onclick="saveResult(${m.id})" style="width:100%;padding:8px;font-size:10px;border-radius:8px;background:var(--grn);color:#fff;border:none;font-family:Poppins,sans-serif;font-weight:700;letter-spacing:.5px;cursor:pointer">✓ GUARDAR RESULTADO</button>
         </div>`;
       });
       html+='</div>';
@@ -2996,40 +2993,65 @@ function renderPInicio(){
         ${!isPaid&&prz.pool>0&&isOpen?`<div style="margin-top:8px;font-size:10px;color:var(--org)">${T('joinToPlay')}<button onclick="pTab('inscripcion',document.querySelector('#S_player .stab:nth-child(6)'))" style="background:none;border:none;color:var(--org);font-size:10px;font-weight:700;cursor:pointer;padding:0;font-family:Poppins,sans-serif">${T('payNow')}</button></div>`:''}
       </div>`;
 
-      // ── My Position + Ranking (2-col) ──
+      // ── Compute match buckets (live / upcoming / latest) ──
+      const _nowMs=Date.now();
+      const live=ms.filter(m=>{if(m.result||!m.date)return false;const k=new Date(m.date).getTime();return _nowMs>=k && _nowMs<k+(2.5*60*60*1000);}).sort((a,b)=>new Date(a.date)-new Date(b.date));
+      const upcoming=ms.filter(m=>!m.result&&new Date(m.date)>=new Date()).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,5);
+      const latest=ms.filter(m=>m.result).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
+      const mySpecials=getMyPodiumData(pol.id);
+
+      // ── LIVE NOW (shown FIRST, full width on PC and mobile) ──
+      if(live.length){
+        html+=`<div class="card" style="padding:12px;margin-bottom:10px;border:1px solid var(--red,#e74c3c);background:linear-gradient(135deg,rgba(231,76,60,.10),rgba(231,76,60,.02))">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#e74c3c;display:inline-block;animation:toastDot 1.2s infinite"></span>
+            <span style="font-size:11px;font-weight:800;color:#e74c3c;letter-spacing:1px">EN JUEGO AHORA</span>
+          </div>`;
+        live.forEach(m=>{
+          const myPr=CU.predictions.find(p=>p.matchId===m.id);
+          html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0">
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+              <span style="font-size:20px">${getTeamFlag(m,'home')}</span>
+              <span style="font-size:13px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
+            </div>
+            <span style="font-size:10px;color:var(--tx3);font-weight:700;flex-shrink:0">VS</span>
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;justify-content:flex-end">
+              <span style="font-size:13px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${m.away}</span>
+              <span style="font-size:20px">${getTeamFlag(m,'away')}</span>
+            </div>
+          </div>
+          ${myPr?`<div style="text-align:center;font-size:10px;color:var(--tx2);margin-top:2px">Tu pronóstico: <strong style="color:var(--org)">${myPr.home}–${myPr.away}</strong></div>`:`<div style="text-align:center;font-size:10px;color:var(--tx3);margin-top:2px">No alcanzaste a pronosticar</div>`}`;
+        });
+        html+='</div>';
+      }
+
+      // ── My Position: compact full-width strip (aligns nicely on PC + mobile) ──
       const top15=ranked.slice(0,15);
-      html+=`<div class="two-col-grid">`;
-      // Left: My Position — compact card
-      html+=`<div class="card" style="padding:14px">
-        <div class="ct" style="margin-bottom:10px"><div class="ct-dot ct-dot-g"></div>${T('myPosition')}</div>`;
+      const _pill=(val,lbl,col)=>`<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:6px 11px;text-align:center;min-width:46px"><div style="font-family:'Kallisto',sans-serif;font-size:17px;color:${col};line-height:1">${val}</div><div style="font-size:7px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${lbl}</div></div>`;
       if(myRank>=0){
         const medal=myRank===0?'🥇':myRank===1?'🥈':myRank===2?'🥉':'';
-        html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div style="position:relative;flex-shrink:0">
-            ${avEl(CU,'av-lg')}
-            <div style="position:absolute;bottom:-4px;right:-4px;background:var(--org);color:#fff;font-family:'Kallisto',sans-serif;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2,#111)">${myRank+1}</div>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${medal} ${displayName(CU)}</div>
-            <div style="font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px">${T('ofTotal')} ${ranked.length} ${T('playersLbl')}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:8px;text-align:center">
-            <div style="font-family:'Kallisto',sans-serif;font-size:20px;color:var(--org);line-height:1">#${myRank+1}</div>
-            <div style="font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${T('rank')}</div>
-          </div>
-          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:8px;text-align:center">
-            <div style="font-family:'Kallisto',sans-serif;font-size:20px;color:var(--g1);line-height:1">${myPoolPts}</div>
-            <div style="font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${T('pts')}</div>
+        html+=`<div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="position:relative;flex-shrink:0">
+              ${avEl(CU,'av-lg')}
+              <div style="position:absolute;bottom:-4px;right:-4px;background:var(--org);color:#fff;font-family:'Kallisto',sans-serif;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2,#111)">${myRank+1}</div>
+            </div>
+            <div style="flex:1;min-width:80px">
+              <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${medal} ${displayName(CU)}</div>
+              <div style="font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px">${T('myPosition')}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              ${_pill('#'+(myRank+1),T('rank'),'var(--org)')}
+              ${_pill(myPoolPts,T('pts'),'var(--g1)')}
+              ${_pill(myPreds.length,CL==='es'?'Jugados':'Played','var(--tx2)')}
+            </div>
           </div>
         </div>`;
       } else {
-        html+=`<div style="text-align:center;padding:14px 0;color:var(--tx3);font-size:11px">${T('enterScoresToRank')}</div>`;
+        html+=`<div class="card" style="padding:12px 14px;margin-bottom:10px"><div style="text-align:center;color:var(--tx3);font-size:11px">${T('enterScoresToRank')}</div></div>`;
       }
-      html+='</div>';
-      // Right: Top 15 for this pool
-      html+=`<div class="card" style="padding:14px">
+      // ── Ranking: full width ──
+      html+=`<div class="card" style="padding:14px;margin-bottom:12px">
         <div class="ct" style="margin-bottom:10px"><div class="ct-dot ct-dot-o"></div>${T('ranking')}</div>`;
       if(top15.length){
         top15.slice(0,8).forEach((r,i)=>{
@@ -3046,45 +3068,9 @@ function renderPInicio(){
       } else {
         html+=`<div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px">${T('noScoresYet')}</div>`;
       }
-      html+='</div></div>';
+      html+='</div>';
 
       // ── 2-col: Upcoming/Results LEFT + Podium RIGHT ──
-      const _nowMs=Date.now();
-      // Live = kicked off, no result yet, within ~2.5h window
-      const live=ms.filter(m=>{
-        if(m.result||!m.date)return false;
-        const k=new Date(m.date).getTime();
-        return _nowMs>=k && _nowMs<k+(2.5*60*60*1000);
-      }).sort((a,b)=>new Date(a.date)-new Date(b.date));
-      const upcoming=ms.filter(m=>!m.result&&new Date(m.date)>=new Date()).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,5);
-      const latest=ms.filter(m=>m.result).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
-      const mySpecials=getMyPodiumData(pol.id);
-
-      // ── LIVE NOW: match currently being played ──────────────────────
-      if(live.length){
-        html+=`<div class="card" style="padding:12px;margin-bottom:8px;border:1px solid var(--red,#e74c3c);background:linear-gradient(135deg,rgba(231,76,60,.10),rgba(231,76,60,.02))">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-            <span style="width:8px;height:8px;border-radius:50%;background:#e74c3c;display:inline-block;animation:toastDot 1.2s infinite"></span>
-            <span style="font-size:11px;font-weight:800;color:#e74c3c;letter-spacing:1px">EN JUEGO AHORA</span>
-          </div>`;
-        live.forEach(m=>{
-          const myPr=CU.predictions.find(p=>p.matchId===m.id);
-          html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0">
-            <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0">
-              <span style="font-size:18px">${getTeamFlag(m,'home')}</span>
-              <span style="font-size:12px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
-            </div>
-            <span style="font-size:10px;color:var(--tx3);font-weight:700;flex-shrink:0">VS</span>
-            <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;justify-content:flex-end">
-              <span style="font-size:12px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${m.away}</span>
-              <span style="font-size:18px">${getTeamFlag(m,'away')}</span>
-            </div>
-          </div>
-          ${myPr?`<div style="text-align:center;font-size:10px;color:var(--tx2);margin-top:2px">Tu pronóstico: <strong style="color:var(--org)">${myPr.home}–${myPr.away}</strong></div>`:`<div style="text-align:center;font-size:10px;color:var(--tx3);margin-top:2px">No alcanzaste a pronosticar</div>`}`;
-        });
-        html+='</div>';
-      }
-
       html+=`<div class="two-col-grid">`;
 
       // LEFT: Upcoming + Latest Results
@@ -3457,38 +3443,41 @@ function renderPHist(){
   Object.keys(grouped).forEach(pollaId=>{
     const pol=DB.pollas.find(p=>p.id===parseInt(pollaId));
     const items=grouped[pollaId].sort((a,b)=>new Date(b.m.date)-new Date(a.m.date));
-    html+=`<div style="margin-bottom:6px;font-size:10px;font-weight:700;color:var(--tx2);letter-spacing:.5px;padding-bottom:4px;border-bottom:1px solid var(--bd)">${pol?pol.name:`Pool #${pollaId}`}</div>`;
+    const poolPts=items.reduce((s,x)=>s+(x.pr.pts||0),0);
+    const playedCnt=items.filter(x=>x.m.result).length;
+    // Pool header with summary
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bd)">
+      <div style="font-size:12px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px"><div class="ct-dot ct-dot-o"></div>${pol?pol.name:`Pool #${pollaId}`}</div>
+      <div style="font-size:10px;color:var(--tx3)"><strong style="color:var(--g1);font-family:'Kallisto',sans-serif;font-size:13px">${poolPts}</strong> pts · ${playedCnt}/${items.length}</div>
+    </div>`;
     items.forEach(({pr,m})=>{
-      const pol2=DB.pollas.find(p=>p.id===m.pollaId);
-      const tz=dispTz();
       const hasResult=!!m.result;
-      const typeLabel=pr.type?TYPE_LABELS[pr.type]:'Pending';
+      const typeLabel=pr.type?TYPE_LABELS[pr.type]:T('pending');
       const typeColor=pr.type?TYPE_COLORS[pr.type]:'var(--tx3)';
-      const typeBg=pr.type?TYPE_BG[pr.type]:'var(--bg3)';
       const stg=stageLabel(m.stage)||'';
-      html+=`<div style="display:flex;align-items:stretch;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd)">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--tx)">${m.home} <span style="color:var(--tx2);font-weight:400">vs</span> ${m.away}</div>
-          <div style="font-size:11px;color:var(--tx2);margin-bottom:7px">${fmtDual(m.date)}${stg?` · <span style="color:var(--tx3)">${stg}</span>`:''}</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <div style="background:var(--bg4);border-radius:8px;padding:5px 11px;font-size:12px">
-              <span style="color:var(--tx2);font-size:10px">${T('myPick')}</span><strong>${pr.home}–${pr.away}</strong>
-            </div>
-            ${hasResult?`<div style="background:var(--bg4);border-radius:8px;padding:5px 11px;font-size:12px">
-              <span style="color:var(--tx2);font-size:10px">${T('resultLbl')}</span><strong>${m.result.home}–${m.result.away}</strong>
-            </div>`:''}
+      const hF=getFlag(m.home),aF=getFlag(m.away);
+      html+=`<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:11px 12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+            <span style="font-size:16px">${hF}</span>
+            <span style="font-size:12px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
+            <span style="font-size:10px;color:var(--tx3);flex-shrink:0">vs</span>
+            <span style="font-size:12px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.away}</span>
+            <span style="font-size:16px">${aF}</span>
           </div>
+          ${hasResult
+            ? `<span style="font-family:'Kallisto',sans-serif;font-size:13px;font-weight:700;color:${typeColor};white-space:nowrap;flex-shrink:0">${pr.pts>0?'+'+pr.pts:'0'} pts</span>`
+            : `<span style="font-size:10px;color:var(--org);font-weight:700;white-space:nowrap;flex-shrink:0">⏳ ${T('pending')}</span>`}
         </div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:68px;background:${typeBg};border-radius:10px;padding:10px 8px;border:1px solid var(--bd)">
-          ${hasResult?`
-            <div style="font-family:'Kallisto',sans-serif;font-size:22px;font-weight:500;color:${typeColor};line-height:1">${pr.pts>0?'+'+pr.pts:'0'}</div>
-            <div style="font-size:8px;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin:2px 0">pts</div>
-            <div style="font-size:9px;font-weight:700;color:${typeColor};text-align:center;line-height:1.3">${typeLabel}</div>
-          `:`<div style="font-size:10px;color:var(--org);font-weight:700;text-align:center">⏳<br>${T('pending')}</div>`}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span style="background:var(--org2);color:var(--org);border-radius:7px;padding:3px 9px;font-size:11px;font-weight:700">${T('myPick')}${pr.home}–${pr.away}</span>
+          ${hasResult?`<span style="background:var(--bg4);border-radius:7px;padding:3px 9px;font-size:11px"><span style="color:var(--tx3)">${T('resultLbl')}</span><strong>${m.result.home}–${m.result.away}</strong></span>
+            <span style="font-size:9px;font-weight:700;color:${typeColor}">${typeLabel}</span>`:''}
+          <span style="margin-left:auto;font-size:9px;color:var(--tx3)">${fmtDual(m.date)}${stg?` · ${stg}`:''}</span>
         </div>
       </div>`;
     });
-    html+='<div style="height:10px"></div>';
+    html+='<div style="height:8px"></div>';
   });
   el.innerHTML=html||empty(T('noPredictions'));
 }
