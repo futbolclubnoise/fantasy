@@ -3394,21 +3394,26 @@ function renderPRanking(){
   }).sort(function(a,b){return b.pts-a.pts;});
   var displayName=function(u){return u.nickname||u.name;};
   var iMePaid=isPlayerPaid(CU,pollaId);
+  var TOP_BG=['rgba(255,165,0,.12)','rgba(192,192,192,.10)','rgba(180,130,80,.10)'];
+  var TOP_BD=['rgba(255,165,0,.45)','rgba(192,192,192,.4)','rgba(180,130,80,.4)'];
   var rowHtml=function(r,i,isMe){
-    var pc=i===0?'a':i===1?'b':i===2?'c':'';
-    var sym=i===0?'◆':i===1?'◇':i===2?'▸':(i+1)+'.';
-    return'<div class="t5-r" style="'+(isMe?'background:var(--org2);border-radius:10px;margin:3px 0;padding:8px 6px;':'padding:6px;')+'" onclick="showPlayerProfile('+r.u.id+')">'
-      +'<div class="t5-pos '+pc+'" style="font-size:'+(i<3?'15px':'12px')+';'+(isMe?'color:var(--org)':'color:var(--tx3)')+';width:28px">'+sym+'</div>'
+    var pos=i+1;
+    var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    var bg=isMe?'var(--org2)':(i<3?TOP_BG[i]:'var(--bg3)');
+    var bd=isMe?'var(--org3)':(i<3?TOP_BD[i]:'var(--bd)');
+    var ptsCol=isMe?'var(--org)':(i<3?'var(--org)':'var(--tx)');
+    return'<div onclick="showPlayerProfile('+r.u.id+')" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;margin-bottom:5px;cursor:pointer;background:'+bg+';border:1px solid '+bd+'">'
+      +'<div style="width:'+(i<3?'24px':'26px')+';text-align:center;flex-shrink:0;font-family:\'Kallisto\',sans-serif;font-weight:700;font-size:'+(i<3?'17px':'13px')+';color:'+(isMe?'var(--org)':'var(--tx3)')+'">'+(medal||pos)+'</div>'
       +avEl(r.u)
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:'+(isMe?700:500)+';color:'+(isMe?'var(--org)':'var(--tx2)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+displayName(r.u)+(isMe?' ◀':'')+'</div>'
-        +(r.u.name&&r.u.nickname&&r.u.name!==r.u.nickname&&!isMe?'<div style="font-size:9px;color:var(--tx3)">'+r.u.name+'</div>':'')
+        +'<div style="font-size:13px;font-weight:'+(isMe?700:600)+';color:'+(isMe?'var(--org)':'var(--tx)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+displayName(r.u)+(isMe?' <span style="font-size:8px;background:var(--org);color:#fff;border-radius:5px;padding:1px 6px;font-family:Poppins,sans-serif;font-weight:700;letter-spacing:.5px;vertical-align:middle">'+(CL==='es'?'TÚ':'YOU')+'</span>':'')+'</div>'
       +'</div>'
-      +'<div style="font-family:\'Kallisto\',sans-serif;font-weight:500;font-size:16px;color:'+(isMe?'var(--org)':'var(--tx2)')+'">'+r.pts+'<span style="font-size:8px;color:var(--tx3);font-family:\'Poppins\',sans-serif"> pts</span></div>'
+      +'<div style="text-align:right;flex-shrink:0"><span style="font-family:\'Kallisto\',sans-serif;font-weight:700;font-size:18px;color:'+ptsCol+'">'+r.pts+'</span><span style="font-size:8px;color:var(--tx3);font-family:\'Poppins\',sans-serif"> pts</span></div>'
       +'</div>';
   };
   // Full ranking — ALL players, highest points first
-  var rows=ranked.map(function(r,i){return rowHtml(r,i,r.u.id===CU.id);}).join('')||empty(T('noPlayers'));
+  var header=ranked.length?'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:1px">🏆 '+T('ranking')+'</div><div style="font-size:10px;color:var(--tx3)">'+ranked.length+' '+T('playersLbl')+'</div></div>':'';
+  var rows=header+(ranked.map(function(r,i){return rowHtml(r,i,r.u.id===CU.id);}).join('')||empty(T('noPlayers')));
   // CTA for unpaid player
   var cta='';
   if(!iMePaid&&pol.status==='open'){
