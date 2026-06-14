@@ -3015,16 +3015,17 @@ function renderPInicio(){
       const latest=ms.filter(m=>m.result).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
       const mySpecials=getMyPodiumData(pol.id);
 
-      // ── LIVE NOW (shown FIRST, full width on PC and mobile) ──
+      // ── LIVE NOW (built into a variable so it can sit beside My Position) ──
+      let liveHtml='';
       if(live.length){
-        html+=`<div class="card" style="padding:12px;margin-bottom:10px;border:1px solid var(--red,#e74c3c);background:linear-gradient(135deg,rgba(231,76,60,.10),rgba(231,76,60,.02))">
+        liveHtml+=`<div class="card" style="padding:12px;margin-bottom:0;border:1px solid var(--red,#e74c3c);background:linear-gradient(135deg,rgba(231,76,60,.10),rgba(231,76,60,.02))">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
             <span style="width:8px;height:8px;border-radius:50%;background:#e74c3c;display:inline-block;animation:toastDot 1.2s infinite"></span>
             <span style="font-size:11px;font-weight:800;color:#e74c3c;letter-spacing:1px">EN JUEGO AHORA</span>
           </div>`;
         live.forEach(m=>{
           const myPr=CU.predictions.find(p=>p.matchId===m.id);
-          html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0">
+          liveHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0">
             <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
               <span style="font-size:20px">${getTeamFlag(m,'home')}</span>
               <span style="font-size:13px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home}</span>
@@ -3037,16 +3038,17 @@ function renderPInicio(){
           </div>
           ${myPr?`<div style="text-align:center;font-size:10px;color:var(--tx2);margin-top:2px">Tu pronóstico: <strong style="color:var(--org)">${myPr.home}–${myPr.away}</strong></div>`:`<div style="text-align:center;font-size:10px;color:var(--tx3);margin-top:2px">No alcanzaste a pronosticar</div>`}`;
         });
-        html+='</div>';
+        liveHtml+='</div>';
       }
 
-      // ── My Position: compact full-width strip (aligns nicely on PC + mobile) ──
+      // ── My Position (built into a variable) ──
       const top15=ranked.slice(0,15);
       const _pill=(val,lbl,col)=>`<div style="background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:6px 11px;text-align:center;min-width:46px"><div style="font-family:'Kallisto',sans-serif;font-size:17px;color:${col};line-height:1">${val}</div><div style="font-size:7px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${lbl}</div></div>`;
+      let posHtml='';
       if(myRank>=0){
         const medal=myRank===0?'🥇':myRank===1?'🥈':myRank===2?'🥉':'';
-        html+=`<div class="card" style="padding:12px 14px;margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        posHtml=`<div class="card" style="padding:12px 14px;margin-bottom:0;height:100%">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;height:100%">
             <div style="position:relative;flex-shrink:0">
               ${avEl(CU,'av-lg')}
               <div style="position:absolute;bottom:-4px;right:-4px;background:var(--org);color:#fff;font-family:'Kallisto',sans-serif;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg2,#111)">${myRank+1}</div>
@@ -3063,7 +3065,13 @@ function renderPInicio(){
           </div>
         </div>`;
       } else {
-        html+=`<div class="card" style="padding:12px 14px;margin-bottom:10px"><div style="text-align:center;color:var(--tx3);font-size:11px">${T('enterScoresToRank')}</div></div>`;
+        posHtml=`<div class="card" style="padding:12px 14px;margin-bottom:0;height:100%;display:flex;align-items:center;justify-content:center"><div style="text-align:center;color:var(--tx3);font-size:11px">${T('enterScoresToRank')}</div></div>`;
+      }
+      // Live + Position side by side when there's a live match; else position full width
+      if(live.length){
+        html+=`<div class="two-col-grid" style="align-items:stretch;margin-bottom:10px">${liveHtml}${posHtml}</div>`;
+      } else {
+        html+=posHtml.replace('height:100%','')+'<div style="height:10px"></div>';
       }
       // ── Ranking: full width ──
       html+=`<div class="card" style="padding:14px;margin-bottom:12px">
@@ -3125,13 +3133,15 @@ function renderPInicio(){
         });
         html+='</div>';
       }
+      // Latest results → built as a variable, rendered in the RIGHT column under the podium
+      let latestHtml='';
       if(latest.length){
-        html+=`<div class="card" style="padding:12px">
+        latestHtml+=`<div class="card" style="padding:12px;margin-bottom:0">
           <div class="ct" style="margin-bottom:8px"><div class="ct-dot ct-dot-r"></div><span style="color:var(--tx);font-weight:700;font-size:12px">${T('latestResults')}</span></div>`;
         latest.forEach(m=>{
           const myPr=CU.predictions.find(p=>p.matchId===m.id);
           const isCorrect=myPr&&myPr.pts>0;
-          html+=`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
+          latestHtml+=`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
               <div style="font-size:11px;color:var(--tx);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.home} <span style="font-family:'Kallisto',sans-serif;font-weight:700;color:var(--g1)">${m.result.home}–${m.result.away}</span> ${m.away}</div>
               ${myPr?`<span style="font-size:11px;font-weight:700;color:${isCorrect?'var(--grn)':'var(--red)'};white-space:nowrap">${isCorrect?'✅ +':'❌ '}${myPr.pts||0} pts</span>`:`<span style="font-size:9px;color:var(--tx3);white-space:nowrap">Sin jugar</span>`}
@@ -3139,17 +3149,17 @@ function renderPInicio(){
             ${myPr?`<div style="font-size:9px;color:var(--tx2);margin-top:3px">Tu pronóstico: <strong style="color:var(--org)">${myPr.home}–${myPr.away}</strong></div>`:''}
           </div>`;
         });
-        html+='</div>';
+        latestHtml+='</div>';
       }
-      if(!upcoming.length&&!latest.length){
+      if(!upcoming.length){
         html+=`<div class="card" style="padding:14px;text-align:center">
           <div style="font-size:11px;color:var(--tx2)">${T('noMatchesYet')}</div>
         </div>`;
       }
       html+='</div>';
 
-      // RIGHT: Podium
-      html+=`<div>`;
+      // RIGHT: Podium + Latest Results (stacked, aligns with the upcoming list on the left)
+      html+=`<div style="display:flex;flex-direction:column;gap:8px">`;
       if(mySpecials.filled){
         html+=`<div class="podium-card">
           <div class="ct" style="margin-bottom:4px"><div class="ct-dot ct-dot-o"></div><span style="color:var(--tx);font-weight:700;font-size:12px">${T('myPodium')}</span></div>
@@ -3196,6 +3206,7 @@ function renderPInicio(){
           <div style="font-size:11px;color:var(--tx2)">${T('podiumSoon')}</div>
         </div>`;
       }
+      html+=latestHtml; // Latest Results under the podium (right column)
       html+='</div>';
 
       html+='</div>'; // end 2-col grid
