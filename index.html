@@ -391,9 +391,12 @@ code{background:var(--bg3);padding:1px 6px;border-radius:4px;font-size:10px;}
 .two-col-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px;}
 @media(min-width:640px){.two-col-grid{grid-template-columns:1fr 1fr;gap:12px;}}
 /* Admin match/result cards: 1 col mobile → 2 → 3 on wider screens */
-.adm-match-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;}
-@media(min-width:720px){.adm-match-grid{grid-template-columns:repeat(2,1fr);}}
-@media(min-width:1060px){.adm-match-grid{grid-template-columns:repeat(3,1fr);}}
+.adm-match-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;}
+@media(min-width:640px){.adm-match-grid{grid-template-columns:repeat(2,1fr);}}
+@media(min-width:960px){.adm-match-grid{grid-template-columns:repeat(3,1fr);}}
+.adm-match-grid>div{min-width:0;}
+/* Give the admin portal more room so 3 columns breathe */
+#S_admin .page{max-width:1320px;}
 
 
 /* ════ READABILITY BOOST ════ */
