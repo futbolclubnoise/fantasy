@@ -3036,7 +3036,7 @@ function renderPInicio(){
               <span style="font-size:20px">${getTeamFlag(m,'away')}</span>
             </div>
           </div>
-          ${myPr?`<div style="text-align:center;font-size:10px;color:var(--tx2);margin-top:2px">Tu pronóstico: <strong style="color:var(--org)">${myPr.home}–${myPr.away}</strong></div>`:`<div style="text-align:center;font-size:10px;color:var(--tx3);margin-top:2px">No alcanzaste a pronosticar</div>`}`;
+          ${myPr?`<div style="text-align:center;font-size:10px;color:var(--tx2);margin-top:2px">Tu pronóstico: <strong style="color:var(--org)">${myPr.home}–${myPr.away}</strong></div>`:`<div style="text-align:center;font-size:10px;color:var(--tx3);margin-top:2px">Sin pronóstico para este partido</div>`}`;
         });
         liveHtml+='</div>';
       }
@@ -3997,7 +3997,7 @@ function saveOnePred(matchId){
   // Write predictions into DB.users so saveDB() picks them up
   var u=DB.users.find(function(x){return x.id===CU.id;});
   if(u){u.predictions=CU.predictions.slice();} // .slice() makes a copy so _fbOnUpdate can't mutate CU.predictions via reference
-  saveDB();
+  saveDB(true); // immediate Firebase write — predictions must never be lost
   var btn=document.getElementById('btn_'+matchId);
   if(btn){btn.textContent='✅ Guardado';btn.style.background='var(--grn)';btn.style.color='#fff';btn.style.border='none';}
 }
@@ -4039,7 +4039,7 @@ function savePreds(){
     // Write back to DB.users so saveDB() captures everything
     var dbU=DB.users.find(function(x){return x.id===CU.id;});
     if(dbU)dbU.predictions=CU.predictions.slice();
-    saveDB();
+    saveDB(true); // immediate — never lose predictions
     alert('✅ '+saved+' prediction(s) saved');
   }else{
     alert('No predictions to save — check values or matches may be locked');
@@ -4341,42 +4341,44 @@ function lsLoad(){
   }catch(e){return null;}
 }
 var _saveDBTimer=null;
-async function saveDB(){
+// Actually push both docs to Firebase (data + users)
+function _flushDB(){
+  if(!window._fbSaveData||!window._fbSaveUsers)return;
+  clearTimeout(_saveDBTimer);_saveDBTimer=null;
+  var dataPayload={
+    pollas:DB.pollas||[],
+    matches:DB.matches||[],
+    banners:DB.banners||{},
+    stripe:{pub:DB.stripe?DB.stripe.pub:''},  // NEVER save secret key to cloud
+    settings:DB.settings||{},
+    specials:DB.specials||[],
+    bonusQuestions:DB.bonusQuestions||[],
+    nid:DB.nid||{u:10,p:1,m:1},
+    notifications:DB.notifications||[],
+    userChunks:Math.max(1,Math.ceil((DB.users||[]).length/50)), // 50 = CHUNK size in _fbSaveUsers
+    _ts:DB._ts
+  };
+  var usersSz=Math.round(JSON.stringify(DB.users).length/1024);
+  if(usersSz>900&&CU&&CU.role==='admin'){try{showE('⚠️ User data is '+usersSz+'KB (limit ~1000KB).');}catch(e){}}
+  Promise.all([
+    window._fbSaveData(dataPayload).then(function(){console.log('✅ cfl/data saved');}),
+    window._fbSaveUsers(DB.users).then(function(){console.log('✅ cfl/users saved');})
+  ]).catch(function(e){
+    console.error('❌ Firebase save FAILED:',e.code,e.message);
+    try{alert('⚠️ No se pudo guardar en la nube ('+(e.code||e.message||'unknown')+').\nReintentando...');}catch(ex){}
+    // Retry once after 1.5s — predictions must not be lost
+    setTimeout(_flushDB,1500);
+  });
+}
+// saveDB(true) → write to Firebase immediately (use for predictions/critical saves)
+// saveDB()     → debounced 800ms (fine for bulk admin actions)
+async function saveDB(immediate){
   DB._ts=Date.now();
   lsSave(); // always immediate — localStorage is instant and cheap
   if(!window._fbSaveData||!window._fbSaveUsers)return;
-  // Debounce Firebase writes: rapid sequential saves (e.g. scoring multiple matches)
-  // collapse into a single Firestore write after 800ms of inactivity
+  if(immediate){_flushDB();return;}
   clearTimeout(_saveDBTimer);
-  _saveDBTimer=setTimeout(function(){
-    // ── Build data payload: NO users, NO photos ─────────────────────────────
-    var dataPayload={
-      pollas:DB.pollas||[],
-      matches:DB.matches||[],
-      banners:DB.banners||{},
-      stripe:{pub:DB.stripe?DB.stripe.pub:''},  // NEVER save secret key to cloud
-      settings:DB.settings||{},
-      specials:DB.specials||[],
-      bonusQuestions:DB.bonusQuestions||[],
-      nid:DB.nid||{u:10,p:1,m:1},
-      notifications:DB.notifications||[],
-      userChunks:Math.max(1,Math.ceil((DB.users||[]).length/50)), // 50 = CHUNK size in _fbSaveUsers
-      _ts:DB._ts
-    };
-    var dataSz=Math.round(JSON.stringify(dataPayload).length/1024);
-    var usersSz=Math.round(JSON.stringify(DB.users).length/1024);
-    console.log('💾 Saving: data ~'+dataSz+'KB, users ~'+usersSz+'KB (photos in Firebase Storage)');
-    if(usersSz>900&&CU&&CU.role==='admin'){
-      try{showE('⚠️ User data is '+usersSz+'KB (limit ~1000KB). Contact admin.');}catch(e){}
-    }
-    Promise.all([
-      window._fbSaveData(dataPayload).then(function(){console.log('✅ cfl/data saved ~'+dataSz+'KB');}),
-      window._fbSaveUsers(DB.users).then(function(){console.log('✅ cfl/users saved ~'+usersSz+'KB');})
-    ]).catch(function(e){
-      console.error('❌ Firebase save FAILED:',e.code,e.message);
-      try{alert('⚠️ Could not save to cloud ('+(e.code||e.message||'unknown')+').\nData is saved locally. Try refreshing.');}catch(ex){}
-    });
-  },800);
+  _saveDBTimer=setTimeout(_flushDB,800);
 }
 // Push ONLY the cfl/data document (pollas, matches, settings…) to Firebase.
 // Never writes cfl/users — safe to call before the users snapshot has loaded.
@@ -5184,7 +5186,7 @@ function submitSpecialAnswer(spId){
       else s.userAnswers.push({userId:CU.id,answer:answer,ts:Date.now()});
       var u=DB.users.find(function(x){return x.id===CU.id;});
       if(u)u.predictions=CU.predictions;
-      saveDB();renderPEspeciales();
+      saveDB(true);renderPEspeciales();
     },
     'Confirm Pick 🔒',
     '🏆',
