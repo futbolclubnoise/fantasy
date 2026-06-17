@@ -3401,6 +3401,33 @@ function showPlayerProfile(uid){
       +'</div>';
   }
   document.getElementById('ppPodium').innerHTML=podiumHtml;
+  // ── Finished matches: result · player's pick · points ─────────────────────
+  var preds=u.predictions||[];
+  var finished=preds.map(function(pr){
+    var m=DB.matches.find(function(x){return x.id===pr.matchId&&x.result;});
+    return m?{m:m,pr:pr}:null;
+  }).filter(Boolean).sort(function(a,b){return new Date(b.m.date)-new Date(a.m.date);});
+  var matchesHtml='';
+  if(finished.length){
+    var TYPE_COL={exact:'var(--org)',diff:'var(--g2)',result:'var(--grn)',wrong:'var(--red)'};
+    var rows=finished.map(function(o){
+      var m=o.m,pr=o.pr;
+      var col=pr.pts>0?(TYPE_COL[pr.type]||'var(--grn)'):'var(--red)';
+      var hF=getFlag(m.home),aF=getFlag(m.away);
+      return '<div style="background:var(--bg4);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;margin-bottom:6px;text-align:left">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">'
+          +'<div style="font-size:11px;font-weight:700;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+hF+' '+m.home+' <span style="font-family:Kallisto,sans-serif;color:var(--g1)">'+m.result.home+'–'+m.result.away+'</span> '+m.away+' '+aF+'</div>'
+          +'<span style="font-size:11px;font-weight:700;color:'+col+';white-space:nowrap;flex-shrink:0">'+(pr.pts>0?'+':'')+(pr.pts||0)+' pts</span>'
+        +'</div>'
+        +'<div style="font-size:9px;color:var(--tx3)">'+(CL==='es'?'Puso':'Picked')+': <strong style="color:var(--org)">'+pr.home+'–'+pr.away+'</strong></div>'
+        +'</div>';
+    }).join('');
+    matchesHtml='<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)">'
+      +'<div style="font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">⚽ '+(CL==='es'?'Partidos jugados':'Played matches')+' · '+finished.length+'</div>'
+      +rows
+      +'</div>';
+  }
+  document.getElementById('ppMatches').innerHTML=matchesHtml;
   modal.style.display='flex';
 }
 
@@ -5463,14 +5490,15 @@ setInterval(function(){if(typeof CU!=='undefined'&&CU&&CU.role!=='admin'){try{re
 
 <!-- ════ PLAYER PROFILE CARD ════ -->
 <div id="playerProfileModal" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
-  <div id="playerProfileBox" style="background:var(--bg3);border:1px solid var(--bd3);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center;animation:toastPop .3s cubic-bezier(.34,1.56,.64,1);position:relative">
-    <button onclick="document.getElementById('playerProfileModal').style.display='none'" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;color:var(--tx3);cursor:pointer">✕</button>
+  <div id="playerProfileBox" style="background:var(--bg3);border:1px solid var(--bd3);border-radius:20px;padding:28px 24px;max-width:360px;width:100%;max-height:88vh;overflow-y:auto;text-align:center;animation:toastPop .3s cubic-bezier(.34,1.56,.64,1);position:relative">
+    <button onclick="document.getElementById('playerProfileModal').style.display='none'" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;color:var(--tx3);cursor:pointer;z-index:2">✕</button>
     <div id="ppAvatar"></div>
     <div id="ppName" style="font-family:'Kallisto',sans-serif;font-size:18px;font-weight:600;color:var(--tx);margin-bottom:4px"></div>
     <div id="ppNick" style="font-size:11px;color:var(--tx3);margin-bottom:16px"></div>
     <div id="ppStats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px"></div>
     <div id="ppExtra" style="font-size:10px;color:var(--tx3);margin-bottom:4px"></div>
     <div id="ppPodium"></div>
+    <div id="ppMatches"></div>
   </div>
 </div>
 
