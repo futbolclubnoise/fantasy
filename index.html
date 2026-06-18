@@ -5440,10 +5440,23 @@ window._fbOnUsersUpdate=function(d,chunkName){
 
   // Restore local base64 photo for immediate display; photoURL (Storage URL) comes from Firestore
   var lsData=lsLoad();var lsUsers=(lsData&&lsData.users)||[];
+  var _recoveredAny=false;
   var chunkUsers=d.users.map(function(cloudU){
     var localU=lsUsers.find(function(lu){return lu.id===cloudU.id;});
     var ph=loadUserPhoto(cloudU.id)||(localU&&localU.photo)||'';if(ph)cloudU.photo=ph;
-    // photoURL already present in cloudU from Firestore — no action needed
+    // ── SAFETY: recover predictions saved locally but missing from the cloud ──
+    // Predictions are only ever added/edited (never deleted), so a local pick the
+    // cloud lacks is a genuine save that didn't sync — restore it. Cloud wins for
+    // matchIds present in both (it holds the latest edit).
+    if(localU&&Array.isArray(localU.predictions)&&localU.predictions.length){
+      var cloudIds={};(cloudU.predictions||[]).forEach(function(p){cloudIds[p.matchId]=true;});
+      var recovered=localU.predictions.filter(function(p){return p&&p.matchId!=null&&!cloudIds[p.matchId];});
+      if(recovered.length){
+        cloudU.predictions=(cloudU.predictions||[]).concat(recovered);
+        _recoveredAny=true;
+        console.warn('🔁 Recovered '+recovered.length+' local prediction(s) for user '+cloudU.id+' missing from cloud');
+      }
+    }
     return cloudU;
   });
 
@@ -5476,6 +5489,14 @@ window._fbOnUsersUpdate=function(d,chunkName){
   recalcPredictions();
 
   lsSave();
+  // If we restored any locally-saved predictions missing from the cloud, push them back
+  // so every device sees them. Guard prevents loops (next snapshot finds nothing to recover).
+  if(_recoveredAny&&window._fbSaveUsers&&!window._recoverPushing){
+    window._recoverPushing=true;
+    setTimeout(function(){
+      window._fbSaveUsers(DB.users).then(function(){console.log('✅ Recovered predictions pushed to cloud');}).catch(function(){}).then(function(){window._recoverPushing=false;});
+    },400);
+  }
   _fbRefreshUI();
 };
 
