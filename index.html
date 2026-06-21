@@ -506,7 +506,7 @@ body{font-size:14px;}
 <script type="module">
 
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import{getFirestore,doc,setDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import{getFirestore,doc,setDoc,onSnapshot,collection}from"https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import{getStorage,ref as sRef,uploadString,getDownloadURL}from"https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 try{
 const app=initializeApp({apiKey:"AIzaSyAmsEX2VJRytF9Sw8NOySPD80K9gzv6hRc",authDomain:"cfl-office-pool.firebaseapp.com",projectId:"cfl-office-pool",storageBucket:"cfl-office-pool.firebasestorage.app",messagingSenderId:"670177533526",appId:"1:670177533526:web:7107c4c54701c49a1125f7"});
@@ -577,6 +577,25 @@ window._fbSaveUsers=async function(users){
     window._fbUserChunkCount=chunks.length;
     return true;
   }catch(e){console.error('FB users write error:',e.code,e.message);throw e;}
+};
+
+// ── PER-USER PREDICTIONS: each player writes ONLY their own tiny doc ──────────
+// cfl/preds_{id} lives inside the existing cfl collection (allowed by current rules).
+// Eliminates the shared-document write contention that caused lost/slow saves.
+window._fbSavePreds=async function(userId,preds){
+  try{await setDoc(doc(db,'cfl','preds_'+userId),{p:preds||[],_ts:Date.now()});return true;}
+  catch(e){console.error('FB preds write error:',e.code,e.message);throw e;}
+};
+// Watch each player's own prediction doc in real time (registered as users load)
+var _predWatch={};
+window._fbWatchPreds=function(ids){
+  (ids||[]).forEach(function(id){
+    if(id==null||_predWatch['p'+id])return;_predWatch['p'+id]=1;
+    onSnapshot(doc(db,'cfl','preds_'+id),function(snap){
+      var v=snap.exists()?snap.data():null;
+      if(window._fbOnOnePredUpdate)window._fbOnOnePredUpdate(id,(v&&v.p)?v.p:null);
+    },function(err){console.error('FB pred watch error preds_'+id,err&&err.code);});
+  });
 };
 
 // Legacy alias
@@ -4021,18 +4040,29 @@ function saveOnePred(matchId){
   var pr={matchId:matchId,pollaId:activePolla,home:parseInt(h.value),away:parseInt(a.value),pts:0,correct:false,type:'pending',savedAt:Date.now()};
   var idx=CU.predictions.findIndex(function(p){return p.matchId===matchId;});
   if(idx>=0)CU.predictions[idx]=pr;else CU.predictions.push(pr);
-  // Write predictions into DB.users so saveDB() picks them up
+  // Mirror into DB.users for the local UI
   var u=DB.users.find(function(x){return x.id===CU.id;});
-  if(u){u.predictions=CU.predictions.slice();} // .slice() makes a copy so _fbOnUpdate can't mutate CU.predictions via reference
+  if(u){u.predictions=CU.predictions.slice();}
   var btn=document.getElementById('btn_'+matchId);
   if(btn){btn.textContent='⏳ '+(CL==='es'?'Guardando…':'Saving…');btn.style.background='var(--tx3)';btn.style.color='#fff';btn.disabled=true;}
-  // Wait for the CLOUD to confirm before telling the player it's saved
-  saveDB(true).then(function(){
+  // Write ONLY this player's own tiny doc — fast, and can't clobber anyone else
+  savePredsToCloud().then(function(){
     if(btn){btn.textContent='✅ '+(CL==='es'?'Guardado':'Saved');btn.style.background='var(--grn)';btn.disabled=false;}
   }).catch(function(){
-    // Cloud write failed even after retry — keep local copy and warn the player loudly
     if(btn){btn.textContent='⚠️ '+(CL==='es'?'REINTENTAR':'RETRY');btn.style.background='var(--red)';btn.disabled=false;}
     showSaveError();
+  });
+}
+// Save the current player's predictions to their own Firebase doc (cfl_preds/{id}).
+// localStorage first (instant), then cloud with one automatic retry. Returns a Promise.
+function savePredsToCloud(){
+  try{lsSave();}catch(e){}
+  if(!CU||!window._fbSavePreds)return Promise.resolve();
+  var lean=(CU.predictions||[]).map(function(pr){return{matchId:pr.matchId,pollaId:pr.pollaId,home:pr.home,away:pr.away};});
+  var uid=CU.id;
+  return window._fbSavePreds(uid,lean).catch(function(e){
+    console.warn('preds save failed, retrying…',e&&e.code);
+    return new Promise(function(res,rej){setTimeout(function(){window._fbSavePreds(uid,lean).then(res).catch(rej);},1200);});
   });
 }
 // Pop-up shown when a prediction couldn't reach the cloud
@@ -4085,10 +4115,9 @@ function savePreds(){
     saved++;
   });
   if(saved){
-    // Write back to DB.users so saveDB() captures everything
     var dbU=DB.users.find(function(x){return x.id===CU.id;});
     if(dbU)dbU.predictions=CU.predictions.slice();
-    saveDB(true).then(function(){
+    savePredsToCloud().then(function(){
       alert('✅ '+saved+(CL==='es'?' pronóstico(s) guardado(s) en la nube':' prediction(s) saved'));
     }).catch(function(){
       showSaveError();
@@ -5463,21 +5492,18 @@ window._fbOnUsersUpdate=function(d,chunkName){
 
   // Restore local base64 photo for immediate display; photoURL (Storage URL) comes from Firestore
   var lsData=lsLoad();var lsUsers=(lsData&&lsData.users)||[];
-  var _recoveredAny=false;
+  var _recoveredIds=[];
   var chunkUsers=d.users.map(function(cloudU){
     var localU=lsUsers.find(function(lu){return lu.id===cloudU.id;});
     var ph=loadUserPhoto(cloudU.id)||(localU&&localU.photo)||'';if(ph)cloudU.photo=ph;
     // ── SAFETY: recover predictions saved locally but missing from the cloud ──
-    // Predictions are only ever added/edited (never deleted), so a local pick the
-    // cloud lacks is a genuine save that didn't sync — restore it. Cloud wins for
-    // matchIds present in both (it holds the latest edit).
     if(localU&&Array.isArray(localU.predictions)&&localU.predictions.length){
       var cloudIds={};(cloudU.predictions||[]).forEach(function(p){cloudIds[p.matchId]=true;});
       var recovered=localU.predictions.filter(function(p){return p&&p.matchId!=null&&!cloudIds[p.matchId];});
       if(recovered.length){
         cloudU.predictions=(cloudU.predictions||[]).concat(recovered);
-        _recoveredAny=true;
-        console.warn('🔁 Recovered '+recovered.length+' local prediction(s) for user '+cloudU.id+' missing from cloud');
+        _recoveredIds.push(cloudU.id);
+        console.warn('🔁 Recovered '+recovered.length+' local prediction(s) for user '+cloudU.id);
       }
     }
     return cloudU;
@@ -5493,6 +5519,14 @@ window._fbOnUsersUpdate=function(d,chunkName){
     return na-nb;
   }).forEach(function(k){allUsers=allUsers.concat(window._fbLoadedChunks[k]);});
 
+  // AUTHORITATIVE predictions come from per-user cfl_preds docs (no shared-doc contention).
+  // Override here so a cfl/users snapshot (admin/profile save) can't clobber a player's picks.
+  if(window._fbPredsMap){
+    allUsers.forEach(function(u){
+      if(window._fbPredsMap.hasOwnProperty(String(u.id)))u.predictions=window._fbPredsMap[String(u.id)];
+    });
+  }
+
   // Protect CU predictions from stale snapshots
   if(typeof CU!=='undefined'&&CU&&CU.id&&CU.predictions&&CU.predictions.length>0){
     var myInCloud=allUsers.find(function(u){return u.id===CU.id;});
@@ -5503,6 +5537,9 @@ window._fbOnUsersUpdate=function(d,chunkName){
 
   DB.users=allUsers;
 
+  // Register a real-time watcher for each player's own prediction doc
+  if(window._fbWatchPreds)window._fbWatchPreds(allUsers.map(function(u){return u.id;}));
+
   // Guarantee admin credentials always exist
   var adm=DB.users.find(function(u){return u.role==='admin';});
   if(!adm){DB.users.unshift({id:1,name:'CFL Admin',email:'admin_fcnoise',pass:'FCNOISE26',role:'admin',status:'active',verified:true,points:0,photo:'',phone:'',country:'',predictions:[],payments:[]});}
@@ -5512,15 +5549,31 @@ window._fbOnUsersUpdate=function(d,chunkName){
   recalcPredictions();
 
   lsSave();
-  // If we restored any locally-saved predictions missing from the cloud, push them back
-  // so every device sees them. Guard prevents loops (next snapshot finds nothing to recover).
-  if(_recoveredAny&&window._fbSaveUsers&&!window._recoverPushing){
-    window._recoverPushing=true;
-    setTimeout(function(){
-      window._fbSaveUsers(DB.users).then(function(){console.log('✅ Recovered predictions pushed to cloud');}).catch(function(){}).then(function(){window._recoverPushing=false;});
-    },400);
+  // Recovered local picks → write each affected user's OWN per-user doc (no contention)
+  if(_recoveredIds.length&&window._fbSavePreds){
+    _recoveredIds.forEach(function(uid){
+      var u=DB.users.find(function(x){return x.id===uid;});if(!u)return;
+      var lean=(u.predictions||[]).map(function(pr){return{matchId:pr.matchId,pollaId:pr.pollaId,home:pr.home,away:pr.away};});
+      window._fbSavePreds(uid,lean).then(function(){console.log('✅ Recovered preds saved for user '+uid);}).catch(function(){});
+    });
   }
   _fbRefreshUI();
+};
+
+// ── Per-user prediction docs: authoritative source for predictions (no contention) ──
+window._fbPredsMap=window._fbPredsMap||{};
+window._fbOnOnePredUpdate=function(userId,preds){
+  if(preds==null)return; // no doc yet for this user → keep legacy predictions
+  window._fbPredsMap[String(userId)]=preds;
+  if(!DB.users||!DB.users.length)return;
+  var u=DB.users.find(function(x){return x.id===userId;});
+  if(u)u.predictions=preds;
+  // Keep CU's in-memory copy in sync, but never below their locally-unsaved count
+  if(typeof CU!=='undefined'&&CU&&CU.id===userId){
+    if(!CU.predictions||CU.predictions.length<=preds.length)CU.predictions=preds.slice();
+    if(u)u.predictions=CU.predictions;
+  }
+  recalcPredictions();lsSave();_fbRefreshUI();
 };
 
 document.addEventListener('DOMContentLoaded',startApp);
