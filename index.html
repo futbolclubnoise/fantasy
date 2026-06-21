@@ -1321,6 +1321,40 @@ var DB = {
 
 let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 
+// ── APP VERSION GATE ──────────────────────────────────────────────────────────
+// Bump this number on every deploy players must refresh for. The newest client
+// records it in the cloud; any client running an older number is told to refresh.
+var APP_VERSION = 2;
+window._appOutdated = false;
+function checkAppVersion(){
+  var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
+  if(APP_VERSION>cloudVer){
+    // We're the newest version seen → record it so older clients know to update
+    if(!DB.settings)DB.settings={};
+    DB.settings.appVersion=APP_VERSION;
+    if(typeof pushDataOnly==='function')pushDataOnly();
+    window._appOutdated=false;
+  }else if(APP_VERSION<cloudVer){
+    window._appOutdated=true;
+    showUpdateToast();
+  }else{
+    window._appOutdated=false;
+  }
+}
+function showUpdateToast(){
+  if(document.getElementById('updateToast'))return;
+  var t=document.createElement('div');
+  t.id='updateToast';
+  t.style.cssText='position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px';
+  t.innerHTML='<div style="background:var(--bg3);border:1px solid var(--org);border-radius:20px;padding:30px 26px;max-width:340px;width:100%;text-align:center;box-shadow:0 0 40px rgba(224,124,42,.3)">'
+    +'<div style="font-size:46px;margin-bottom:12px">🔄</div>'
+    +'<div style="font-family:Kallisto,sans-serif;font-size:18px;font-weight:600;color:var(--tx);margin-bottom:10px">Nueva versión disponible</div>'
+    +'<div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:22px">Hay una actualización de la app. <strong style="color:var(--org)">Refresca</strong> para que tus marcadores se guarden correctamente.</div>'
+    +'<button onclick="location.reload(true)" style="padding:12px 30px;border-radius:12px;background:var(--org);color:#fff;border:none;font-family:Poppins,sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.5px">🔄 ACTUALIZAR AHORA</button>'
+    +'</div>';
+  document.body.appendChild(t);
+}
+
 // Display timezone: the logged-in player's choice, or Miami (Eastern) by default
 function dispTz(){return (CU&&CU.tz)?CU.tz:'America/New_York';}
 // Calendar day (YYYY-MM-DD) of an instant, in a given timezone
@@ -4029,6 +4063,7 @@ function showRulesModal(polId){
 
 function saveOnePred(matchId){
   if(!activePolla)return;
+  if(window._appOutdated){showUpdateToast();return;} // force refresh before saving on old version
   var m=DB.matches.find(function(x){return x.id===matchId;});
   // Allow editing freely until the match locks (10 min before) or has a result
   if(!m||matchIsLocked(m)||m.result)return;
@@ -4103,6 +4138,7 @@ function timeUntilLock(m){
 
 function savePreds(){
   if(!activePolla)return;
+  if(window._appOutdated){showUpdateToast();return;} // force refresh before saving on old version
   const ms=DB.matches.filter(m=>m.pollaId===activePolla);
   let saved=0;
   ms.forEach(m=>{
@@ -5459,6 +5495,8 @@ window._fbOnUpdate=function(d){
     DB.notifications=d.notifications||[];
   }
   _updateNotifBadge();
+  // Version gate: record newest or warn outdated clients to refresh
+  try{checkAppVersion();}catch(e){}
 
   // ⚠️ NO seeding or saveDB() here — _fbOnUpdate fires before _fbOnUsersUpdate (cfl/users is
   // a separate Firestore doc). At this point DB.users may still be empty even if real players
@@ -5519,11 +5557,19 @@ window._fbOnUsersUpdate=function(d,chunkName){
     return na-nb;
   }).forEach(function(k){allUsers=allUsers.concat(window._fbLoadedChunks[k]);});
 
-  // AUTHORITATIVE predictions come from per-user cfl_preds docs (no shared-doc contention).
-  // Override here so a cfl/users snapshot (admin/profile save) can't clobber a player's picks.
+  // Predictions come from per-user cfl/preds_* docs (authoritative, no contention).
+  // MERGE (don't replace) with whatever cfl/users holds, so a pick saved by an
+  // OLD app version (which writes cfl/users) is recovered, not lost. cfl/preds wins
+  // for matchIds in both; cfl/users-only picks are added back AND re-saved to preds.
+  var _legacyRecover=[];
   if(window._fbPredsMap){
     allUsers.forEach(function(u){
-      if(window._fbPredsMap.hasOwnProperty(String(u.id)))u.predictions=window._fbPredsMap[String(u.id)];
+      var cloud=window._fbPredsMap[String(u.id)];
+      if(!cloud)return; // no preds doc yet → keep cfl/users predictions as-is
+      var ids={};cloud.forEach(function(p){ids[p.matchId]=true;});
+      var extras=(u.predictions||[]).filter(function(p){return p&&p.matchId!=null&&!ids[p.matchId];});
+      u.predictions=extras.length?cloud.concat(extras):cloud;
+      if(extras.length)_legacyRecover.push(u.id);
     });
   }
 
@@ -5549,12 +5595,17 @@ window._fbOnUsersUpdate=function(d,chunkName){
   recalcPredictions();
 
   lsSave();
-  // Recovered local picks → write each affected user's OWN per-user doc (no contention)
-  if(_recoveredIds.length&&window._fbSavePreds){
-    _recoveredIds.forEach(function(uid){
+  // Recovered picks (local cache OR old-version cfl/users saves) → persist each
+  // affected player's OWN per-user doc so the new system has them. Deduped.
+  var _toResave={};
+  _recoveredIds.forEach(function(id){_toResave[id]=1;});
+  _legacyRecover.forEach(function(id){_toResave[id]=1;});
+  if(window._fbSavePreds){
+    Object.keys(_toResave).forEach(function(idStr){
+      var uid=parseInt(idStr);
       var u=DB.users.find(function(x){return x.id===uid;});if(!u)return;
       var lean=(u.predictions||[]).map(function(pr){return{matchId:pr.matchId,pollaId:pr.pollaId,home:pr.home,away:pr.away};});
-      window._fbSavePreds(uid,lean).then(function(){console.log('✅ Recovered preds saved for user '+uid);}).catch(function(){});
+      window._fbSavePreds(uid,lean).then(function(){console.log('✅ Recovered/migrated preds for user '+uid);}).catch(function(){});
     });
   }
   _fbRefreshUI();
