@@ -1324,7 +1324,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 2;
+var APP_VERSION = 3;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -2378,8 +2378,13 @@ function saveResult(mid){
     const allDone=DB.matches.filter(x=>x.pollaId===pol.id).every(x=>x.result);
     if(allDone)resolveSinglePrizes(pol);
   }
-  saveDB(); // CRITICAL: persist result + points to Firebase
-  renderAdmRes();alert('✅ Result saved and points calculated');
+  if(typeof _protectResults==='function')_protectResults(); // remember this result immediately
+  saveDB(true).then(function(){
+    renderAdmRes();
+  }).catch(function(){
+    try{showSaveError();}catch(e){alert('⚠️ No se pudo guardar el resultado en la nube. Revisa tu conexión.');}
+  });
+  renderAdmRes();
 }
 function resolveSinglePrizes(pol){
   const ms=DB.matches.filter(m=>m.pollaId===pol.id);
@@ -4457,8 +4462,20 @@ function lsLoad(){
     return data;
   }catch(e){return null;}
 }
+// ── RESULT PROTECTION: admin-entered match results must never be lost ──────────
+// Accumulates every result ever seen and restores any that go missing (e.g. a stale
+// client trying to write cfl/data without them). Applied on every load and before
+// every cfl/data write, so no result can be silently dropped.
+window._resultsBackup=window._resultsBackup||{};
+function _protectResults(){
+  (DB.matches||[]).forEach(function(m){
+    if(m.result&&typeof m.result.home==='number'){window._resultsBackup[m.id]=m.result;}
+    else if(window._resultsBackup[m.id]){m.result=window._resultsBackup[m.id];}
+  });
+}
 var _saveDBTimer=null;
 function _buildDataPayload(){
+  _protectResults();
   return {
     pollas:DB.pollas||[],matches:DB.matches||[],banners:DB.banners||{},
     stripe:{pub:DB.stripe?DB.stripe.pub:''},settings:DB.settings||{},
@@ -4499,6 +4516,7 @@ function saveDB(immediate){
 // Never writes cfl/users — safe to call before the users snapshot has loaded.
 function pushDataOnly(){
   if(!window._fbSaveData)return;
+  _protectResults(); // never drop an admin-entered result
   DB._ts=Date.now();lsSave();
   var dataPayload={
     pollas:DB.pollas||[],matches:DB.matches||[],banners:DB.banners||{},
@@ -5480,6 +5498,7 @@ window._fbOnUpdate=function(d){
     if(Array.isArray(d.pollas)&&d.pollas.length)DB.pollas=d.pollas;
     else if(Array.isArray(d.pollas)&&cloudTs>=localTs)DB.pollas=d.pollas; // allow intentional empty only if newer
     if(Array.isArray(d.matches))DB.matches=d.matches;
+    _protectResults(); // restore any result that arrived missing; remember all results seen
     DB.banners=Object.assign({b1:'',b1url:'',b1m:'',b1murl:'',b2a:'',b2aurl:'',b2b:'',b2burl:'',b2c:'',b2curl:''},d.banners||{});
     DB.stripe=Object.assign({pub:'',secret:''},d.stripe||{});
     var _prevAllowEdit=DB.settings&&DB.settings.allowPredEdit;
