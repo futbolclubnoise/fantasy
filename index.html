@@ -1324,7 +1324,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 3;
+var APP_VERSION = 4;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -4096,6 +4096,17 @@ function saveOnePred(matchId){
 // Save the current player's predictions to their own Firebase doc (cfl_preds/{id}).
 // localStorage first (instant), then cloud with one automatic retry. Returns a Promise.
 function savePredsToCloud(){
+  // MERGE with the latest cloud copy first, so this save never drops a pick that
+  // was added elsewhere (admin fix, another device). Cloud-only matchIds are kept.
+  if(CU&&window._fbPredsMap){
+    var cloud=window._fbPredsMap[String(CU.id)]||[];
+    var mine={};(CU.predictions||[]).forEach(function(p){mine[p.matchId]=true;});
+    var extras=cloud.filter(function(p){return p&&p.matchId!=null&&!mine[p.matchId];});
+    if(extras.length){
+      CU.predictions=(CU.predictions||[]).concat(extras);
+      var du=DB.users.find(function(x){return x.id===CU.id;});if(du)du.predictions=CU.predictions.slice();
+    }
+  }
   try{lsSave();}catch(e){}
   if(!CU||!window._fbSavePreds)return Promise.resolve();
   var lean=(CU.predictions||[]).map(function(pr){return{matchId:pr.matchId,pollaId:pr.pollaId,home:pr.home,away:pr.away};});
