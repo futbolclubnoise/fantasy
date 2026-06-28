@@ -1324,7 +1324,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 4;
+var APP_VERSION = 5;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -1357,6 +1357,14 @@ function showUpdateToast(){
 
 // Display timezone: the logged-in player's choice, or Miami (Eastern) by default
 function dispTz(){return (CU&&CU.tz)?CU.tz:'America/New_York';}
+// Treat an admin datetime-local input as COLOMBIA time → absolute ISO (-05:00).
+// Without this, a naive date is read in each viewer's own timezone (Miami showed
+// the wrong hour and locked late). Always store the admin's intended Colombia time.
+function toColISO(v){
+  if(!v)return v;
+  if(/Z$|[+-]\d\d:\d\d$/.test(v))return v;     // already has a timezone
+  return (v.length===16?v+':00':v)+'-05:00';   // "YYYY-MM-DDTHH:MM" → "...:00-05:00"
+}
 // Calendar day (YYYY-MM-DD) of an instant, in a given timezone
 function tzDateKey(iso,tz){
   try{return new Intl.DateTimeFormat('en-CA',{timeZone:tz||'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));}
@@ -2274,7 +2282,7 @@ function createMatch(){
     id:DB.nid.m++,pollaId,home,away,
     homeLogo:document.getElementById('mHL').value.trim(),
     awayLogo:document.getElementById('mAL').value.trim(),
-    date:new Date(date).toISOString(),
+    date:toColISO(date),
     tz:document.getElementById('mTz').value,
     stage:document.getElementById('mStage').value,
     round:document.getElementById('mRound').value.trim(),
@@ -4897,7 +4905,8 @@ function saveEditMatch(){
   var m=DB.matches.find(function(x){return x.id===id;});if(!m)return;
   m.home=document.getElementById('emHo').value.trim()||m.home;
   m.away=document.getElementById('emAw').value.trim()||m.away;
-  m.date=document.getElementById('emDt').value||m.date;
+  var _emd=document.getElementById('emDt').value;
+  if(_emd)m.date=toColISO(_emd);
   m.stage=document.getElementById('emStage2').value;
   m.round=document.getElementById('emRound2').value;
   m.pollaId=parseInt(document.getElementById('emPo2').value)||m.pollaId;
