@@ -1324,7 +1324,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 6;
+var APP_VERSION = 7;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -4506,9 +4506,18 @@ function _protectResults(){
     else if(window._resultsBackup[m.id]){m.result=window._resultsBackup[m.id];}
   });
 }
+// Self-heal: any match date without a timezone is treated as Colombia (-05:00).
+// Prevents the "Miami locks early" bug even if an old client wrote a naive date.
+function _normalizeMatchDates(){
+  (DB.matches||[]).forEach(function(m){
+    if(m.date&&!/Z$|[+-]\d\d:\d\d$/.test(m.date)){
+      m.date=(m.date.length===16?m.date+':00':m.date)+'-05:00';
+    }
+  });
+}
 var _saveDBTimer=null;
 function _buildDataPayload(){
-  _protectResults();
+  _protectResults();_normalizeMatchDates();
   return {
     pollas:DB.pollas||[],matches:DB.matches||[],banners:DB.banners||{},
     stripe:{pub:DB.stripe?DB.stripe.pub:''},settings:DB.settings||{},
@@ -4549,7 +4558,7 @@ function saveDB(immediate){
 // Never writes cfl/users — safe to call before the users snapshot has loaded.
 function pushDataOnly(){
   if(!window._fbSaveData)return;
-  _protectResults(); // never drop an admin-entered result
+  _protectResults();_normalizeMatchDates(); // never drop results; keep dates Colombia-absolute
   DB._ts=Date.now();lsSave();
   var dataPayload={
     pollas:DB.pollas||[],matches:DB.matches||[],banners:DB.banners||{},
@@ -5425,6 +5434,7 @@ function startApp(){
     else{adm.email='admin_fcnoise';adm.pass='FCNOISE26';adm.verified=true;}
     seedWC2026();
     fixGroupStageTimes(); // apply official Colombia kickoff times to existing matches
+    _normalizeMatchDates(); // treat any naive date as Colombia
     seedWC2026Specials();
     cleanOldSpecials();
     lsSave();
@@ -5532,6 +5542,7 @@ window._fbOnUpdate=function(d){
     if(Array.isArray(d.pollas)&&d.pollas.length)DB.pollas=d.pollas;
     else if(Array.isArray(d.pollas)&&cloudTs>=localTs)DB.pollas=d.pollas; // allow intentional empty only if newer
     if(Array.isArray(d.matches))DB.matches=d.matches;
+    _normalizeMatchDates(); // treat any naive date as Colombia (fixes Miami-locks-early)
     _protectResults(); // restore any result that arrived missing; remember all results seen
     DB.banners=Object.assign({b1:'',b1url:'',b1m:'',b1murl:'',b2a:'',b2aurl:'',b2b:'',b2burl:'',b2c:'',b2curl:''},d.banners||{});
     DB.stripe=Object.assign({pub:'',secret:''},d.stripe||{});
