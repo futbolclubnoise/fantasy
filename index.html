@@ -1324,7 +1324,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 7;
+var APP_VERSION = 8;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -1563,7 +1563,7 @@ const COUNTRY_CODE={
   'Curacao':'cw','Curaçao':'cw',
   'Cape Verde':'cv','Cabo Verde':'cv',
   'Uzbekistan':'uz','Uzbekistán':'uz',
-  'DR Congo':'cd','DRC':'cd'
+  'DR Congo':'cd','DRC':'cd','RD Congo':'cd','RD congo':'cd','Congo':'cd'
 };
 
 const FLAG_EMOJI={
@@ -1587,8 +1587,15 @@ const FLAG_EMOJI={
   'gm':'🇬🇲','gw':'🇬🇼','sl':'🇸🇱','lr':'🇱🇷','tg':'🇹🇬','bj':'🇧🇯','ne':'🇳🇪','td':'🇹🇩','mr':'🇲🇷'
 };
 
+var _normFlagMap=null;
+function _normName(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
 function getFlag(name){
   var code=COUNTRY_CODE[name];
+  if(!code){
+    // Fallback: match ignoring case + accents ("Belgica"→"Bélgica", "RD CONGO"→"RD Congo")
+    if(!_normFlagMap){_normFlagMap={};for(var k in COUNTRY_CODE)_normFlagMap[_normName(k)]=COUNTRY_CODE[k];}
+    code=_normFlagMap[_normName(name)];
+  }
   return code?(FLAG_EMOJI[code]||''):'';
 }
 
