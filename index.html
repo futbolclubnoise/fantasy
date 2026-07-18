@@ -1330,7 +1330,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 11;
+var APP_VERSION = 12;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -1431,6 +1431,30 @@ function calcPts(ph,pa,rh,ra,sc){
   if((ph-pa)===(rh-ra)&&pw===rw)return{pts:di,type:'diff'};
   if(pw===rw)return{pts:(rw==='D'?dr:wi),type:'result'};
   return{pts:0,type:'wrong'};
+}
+// Single source of truth for a user's total points: match (recomputed fresh from
+// real results) + special + bonus. Pass a pollaId to scope to one pool, or null for all.
+function userTotalPts(u,pollaId){
+  if(!u)return 0;
+  var pts=0;
+  (u.predictions||[]).forEach(function(p){
+    if(pollaId!=null&&p.pollaId!==pollaId)return;
+    var m=(DB.matches||[]).find(function(x){return x.id===p.matchId;});
+    if(m&&m.result){
+      var pol=(DB.pollas||[]).find(function(pp){return pp.id===p.pollaId;});
+      var sc=pol?(pol.scoring||{win:1,draw:1,exact:5,diff:2}):{win:1,draw:1,exact:5,diff:2};
+      pts+=calcPts(p.home,p.away,m.result.home,m.result.away,sc).pts;
+    }
+  });
+  (DB.specials||[]).forEach(function(sp){
+    if(pollaId!=null&&sp.pollaId!==pollaId)return;
+    if(sp.answer!=null){var a=(sp.userAnswers||[]).find(function(x){return x.userId===u.id;});if(a&&a.answer&&String(a.answer).trim().toLowerCase()===String(sp.answer).trim().toLowerCase())pts+=sp.pts||0;}
+  });
+  (DB.bonusQuestions||[]).forEach(function(bq){
+    if(pollaId!=null&&bq.pollaId!==pollaId)return;
+    if(bq.answer!=null){var a=(bq.userAnswers||[]).find(function(x){return x.userId===u.id;});if(a&&a.answer&&String(a.answer).trim().toLowerCase()===String(bq.answer).trim().toLowerCase())pts+=bq.pts||0;}
+  });
+  return pts;
 }
 function lbRow(u,i,mark){
   const isMe=mark&&CU&&u.id===CU.id;
@@ -2104,7 +2128,7 @@ function renderAdmDash(){
       var cnt=DB.matches.filter(function(m){return m.pollaId===p.id;}).length;
       var matchIds=DB.matches.filter(function(m){return m.pollaId===p.id;}).map(function(m){return m.id;});
       var ranked=[...non].map(function(u){
-        return{u:u,pts:(u.predictions||[]).filter(function(pr){return matchIds.indexOf(pr.matchId)>=0;}).reduce(function(s,pr){return s+(pr.pts||0);},0)};
+        return{u:u,pts:userTotalPts(u,p.id)};
       }).sort(function(a,b){return b.pts-a.pts;}).slice(0,8);
       // Build ranking rows
       var rankHtml='';
@@ -2426,8 +2450,8 @@ function resolveSinglePrizes(pol){
   const sc=pol.scoring||{win:1,draw:1,exact:3,diff:2};
   const ins=DB.users.filter(u=>u.payments&&u.payments.find(p=>p.pollaId===pol.id&&p.status==='succeeded'));
   const ranked=[...ins].sort((a,b)=>{
-    const pA=a.predictions.filter(pr=>ms.find(m=>m.id===pr.matchId)).reduce((s,pr)=>s+(pr.pts||0),0);
-    const pB=b.predictions.filter(pr=>ms.find(m=>m.id===pr.matchId)).reduce((s,pr)=>s+(pr.pts||0),0);
+    const pA=userTotalPts(a,pol.id);
+    const pB=userTotalPts(b,pol.id);
     return pB-pA;
   });
   const prz=calcPrizes(pol);
@@ -2444,7 +2468,7 @@ function renderAdmPremios(){
       var on=pol.status==='open';
       var ins=DB.users.filter(function(u){return u.payments&&u.payments.find(function(p){return p.pollaId===pol.id&&p.status==='succeeded';});});
       var ranked=ins.map(function(u){
-        var pts=u.predictions.filter(function(pr){return ms.find(function(m){return m.id===pr.matchId;});}).reduce(function(s,pr){return s+(pr.pts||0);},0);
+        var pts=userTotalPts(u,pol.id);
         return {id:u.id,name:u.name,nickname:u.nickname,photo:u.photo,predictions:u.predictions,payments:u.payments,pollaPts:pts};
       }).sort(function(a,b){return b.pollaPts-a.pollaPts;});
       // Build prize rows with no nested template literals
@@ -3052,12 +3076,12 @@ function renderPInicio(){
       const myExact=myPolPreds.filter(p=>p.type==='exact').length;
       const myResult=myPolPreds.filter(p=>p.type==='result'||p.type==='diff').length;
       const myWrong=myPolPreds.filter(p=>p.type==='wrong'||(p.pts===0&&p.type)).length;
-      const myPoolPts=myPolPreds.reduce((s,p)=>s+(p.pts||0),0);
+      const myPoolPts=userTotalPts(CU,pol.id);
 
       // My ranking in this pool — only paid/verified players
       const players=DB.users.filter(u=>u.role!=='admin'&&isPlayerPaid(u,pol.id));
       const matchIds=ms.map(m=>m.id);
-      const ranked=players.map(u=>({u,pts:u.predictions.filter(p=>matchIds.includes(p.matchId)).reduce((s,p)=>s+(p.pts||0),0)})).sort((a,b)=>b.pts-a.pts);
+      const ranked=players.map(u=>({u,pts:userTotalPts(u,pol.id)})).sort((a,b)=>b.pts-a.pts);
       const myRank=ranked.findIndex(r=>r.u.id===CU.id);
 
       // ── Pool Hero Card ──
@@ -3423,7 +3447,7 @@ function renderPPollas(){
     const isPaid=isPlayerPaid(CU,p.id);
     const matchIds=ms.map(m=>m.id);
     const players=DB.users.filter(u=>u.role!=='admin');
-    const ranked=players.map(u=>({u,pts:u.predictions.filter(pr=>matchIds.includes(pr.matchId)).reduce((s,pr)=>s+(pr.pts||0),0)})).sort((a,b)=>b.pts-a.pts);
+    const ranked=players.map(u=>({u,pts:userTotalPts(u,p.id)})).sort((a,b)=>b.pts-a.pts);
     const myRank=ranked.findIndex(r=>r.u.id===CU.id);
     const myPts=myRank>=0?ranked[myRank].pts:0;
     const myExact=myPreds.filter(pr=>pr.type==='exact').length;
@@ -3557,8 +3581,7 @@ function renderPRanking(){
   // Only show paid/verified players in the ranking
   var players=DB.users.filter(function(u){return u.role!=='admin'&&u.status!=='disabled'&&isPlayerPaid(u,pollaId);});
   var ranked=players.map(function(u){
-    var pts=(u.predictions||[]).filter(function(p){return matchIds.indexOf(p.matchId)>=0;}).reduce(function(s,p){return s+(p.pts||0);},0);
-    return{u:u,pts:pts};
+    return{u:u,pts:userTotalPts(u,pollaId)};
   }).sort(function(a,b){return b.pts-a.pts;});
   var displayName=function(u){return u.nickname||u.name;};
   var iMePaid=isPlayerPaid(CU,pollaId);
@@ -3835,9 +3858,9 @@ function openModal(pollaId){
   const isPaid=isPlayerPaid(CU,pollaId);
 
   var pollaMatchIds=ms.map(function(m){return m.id;});
-  var myPts=CU?(CU.predictions||[]).filter(function(p){return pollaMatchIds.includes(p.matchId);}).reduce(function(s,p){return s+(p.pts||0);},0):0;
+  var myPts=CU?userTotalPts(CU,pollaId):0;
   var paidPlayers=(DB.users||[]).filter(function(u){return u.role!=='admin'&&isPlayerPaid(u,pollaId);});
-  var rankedPlayers=paidPlayers.map(function(u){var pts=(u.predictions||[]).filter(function(p){return pollaMatchIds.includes(p.matchId);}).reduce(function(s,p){return s+(p.pts||0);},0);return{u:u,pts:pts};}).sort(function(a,b){return b.pts-a.pts;});
+  var rankedPlayers=paidPlayers.map(function(u){return{u:u,pts:userTotalPts(u,pollaId)};}).sort(function(a,b){return b.pts-a.pts;});
   var myRank=CU?rankedPlayers.findIndex(function(r){return r.u.id===CU.id;})+1:0;
   document.getElementById('modMeta').innerHTML=`
     <div class="pmg-item"><div class="pmg-v c-o">${myPts}</div><div class="pmg-l">${T('myPoints')}</div></div>
