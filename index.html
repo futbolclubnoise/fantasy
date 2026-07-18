@@ -1330,7 +1330,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 8;
+var APP_VERSION = 9;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -5308,7 +5308,8 @@ function renderPEspeciales(){
             +(correct?'<span style="color:var(--grn)">'+myAns.answer+' ✓ +'+s.pts+' pts</span>'
               :'<span style="color:var(--red2)">'+myAns.answer+' ✗</span>')+'</div>'
             :'<div style="font-size:9px;color:var(--tx3);margin-top:4px">'+T('specNotAnswered')+'</div>')
-          +'</div>';
+          +'</div>'
+          +(correct?'<div style="margin-top:8px;text-align:center;background:linear-gradient(135deg,var(--grn),#1a9d5a);color:#fff;font-family:Kallisto,sans-serif;font-weight:700;font-size:15px;border-radius:10px;padding:11px;letter-spacing:1px;box-shadow:0 2px 12px rgba(0,180,90,.35)">🎉 +'+s.pts+' '+(CL==='es'?'PUNTOS GANADOS':'POINTS EARNED')+'</div>':'');
       }else if(myAns){
         // Already answered — LOCKED, no editing allowed
         out+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg4);border-radius:8px;padding:9px 12px">'
