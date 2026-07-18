@@ -1330,7 +1330,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 9;
+var APP_VERSION = 10;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -3458,6 +3458,9 @@ function showPlayerProfile(uid){
   if(!u)return;
   var modal=document.getElementById('playerProfileModal');
   var pts=(u.predictions||[]).reduce(function(s,p){return s+(p.pts||0);},0);
+  // Include special + bonus points so the profile total matches the ranking
+  (DB.specials||[]).forEach(function(sp){if(sp.answer!=null){var a=(sp.userAnswers||[]).find(function(x){return x.userId===uid;});if(a&&a.answer&&String(a.answer).trim().toLowerCase()===String(sp.answer).trim().toLowerCase())pts+=sp.pts||0;}});
+  (DB.bonusQuestions||[]).forEach(function(bq){if(bq.answer!=null){var a=(bq.userAnswers||[]).find(function(x){return x.userId===uid;});if(a&&a.answer&&String(a.answer).trim().toLowerCase()===String(bq.answer).trim().toLowerCase())pts+=bq.pts||0;}});
   var exact=(u.predictions||[]).filter(function(p){return p.type==='exact';}).length;
   var total=(u.predictions||[]).length;
   // Avatar
@@ -3482,10 +3485,12 @@ function showPlayerProfile(uid){
       var ans=(s.userAnswers||[]).find(function(a){return a.userId===uid;});
       if(ans)hasAnyPick=true;
       var label=CL==='es'?(s.name_es||s.name):(s.name_en||s.name);
-      return '<div style="flex:1;background:var(--bg4);border:1px solid var(--bd);border-radius:10px;padding:10px 6px;text-align:center">'
+      var correct=ans&&s.answer!=null&&String(ans.answer).trim().toLowerCase()===String(s.answer).trim().toLowerCase();
+      return '<div style="flex:1;background:'+(correct?'var(--grn2)':'var(--bg4)')+';border:1px solid '+(correct?'var(--grn3)':'var(--bd)')+';border-radius:10px;padding:10px 6px;text-align:center">'
         +'<span style="font-size:16px">'+medals[i]+'</span>'
         +'<div style="font-size:9px;color:var(--tx3);margin:3px 0 4px;line-height:1.2">'+label+'</div>'
-        +'<div style="font-size:11px;font-weight:700;color:var(--tx);line-height:1.2">'+(ans?ans.answer:'—')+'</div>'
+        +'<div style="font-size:11px;font-weight:700;color:'+(correct?'var(--grn)':'var(--tx)')+';line-height:1.2">'+(ans?ans.answer:'—')+'</div>'
+        +(correct?'<div style="margin-top:5px;background:var(--grn);color:#fff;font-family:Kallisto,sans-serif;font-weight:700;font-size:12px;border-radius:6px;padding:3px 4px">+'+(s.pts||0)+'</div>':'')
         +'</div>';
     }).join('');
     podiumHtml='<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)">'
