@@ -1330,7 +1330,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 10;
+var APP_VERSION = 11;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -3457,11 +3457,20 @@ function showPlayerProfile(uid){
   var u=DB.users.find(function(x){return x.id===uid;});
   if(!u)return;
   var modal=document.getElementById('playerProfileModal');
-  var pts=(u.predictions||[]).reduce(function(s,p){return s+(p.pts||0);},0);
+  // Recompute match points fresh from real results (don't trust stored p.pts, which may be 0/stale)
+  var pts=0,exact=0;
+  (u.predictions||[]).forEach(function(p){
+    var m=DB.matches.find(function(x){return x.id===p.matchId;});
+    if(m&&m.result){
+      var pol=DB.pollas.find(function(pp){return pp.id===p.pollaId;});
+      var sc=pol?(pol.scoring||{win:1,draw:1,exact:5,diff:2}):{win:1,draw:1,exact:5,diff:2};
+      var r=calcPts(p.home,p.away,m.result.home,m.result.away,sc);
+      pts+=r.pts;if(r.type==='exact')exact++;
+    }
+  });
   // Include special + bonus points so the profile total matches the ranking
   (DB.specials||[]).forEach(function(sp){if(sp.answer!=null){var a=(sp.userAnswers||[]).find(function(x){return x.userId===uid;});if(a&&a.answer&&String(a.answer).trim().toLowerCase()===String(sp.answer).trim().toLowerCase())pts+=sp.pts||0;}});
   (DB.bonusQuestions||[]).forEach(function(bq){if(bq.answer!=null){var a=(bq.userAnswers||[]).find(function(x){return x.userId===uid;});if(a&&a.answer&&String(a.answer).trim().toLowerCase()===String(bq.answer).trim().toLowerCase())pts+=bq.pts||0;}});
-  var exact=(u.predictions||[]).filter(function(p){return p.type==='exact';}).length;
   var total=(u.predictions||[]).length;
   // Avatar
   var _ppSrc=u.photoURL||u.photo||'';
@@ -3510,12 +3519,16 @@ function showPlayerProfile(uid){
     var TYPE_COL={exact:'var(--org)',diff:'var(--g2)',result:'var(--grn)',wrong:'var(--red)'};
     var rows=finished.map(function(o){
       var m=o.m,pr=o.pr;
-      var col=pr.pts>0?(TYPE_COL[pr.type]||'var(--grn)'):'var(--red)';
+      // Recompute this pick's points fresh from the real result (stored pr.pts may be 0/stale)
+      var pol=DB.pollas.find(function(pp){return pp.id===pr.pollaId;});
+      var sc=pol?(pol.scoring||{win:1,draw:1,exact:5,diff:2}):{win:1,draw:1,exact:5,diff:2};
+      var rp=calcPts(pr.home,pr.away,m.result.home,m.result.away,sc);
+      var col=rp.pts>0?(TYPE_COL[rp.type]||'var(--grn)'):'var(--red)';
       var hF=getFlag(m.home),aF=getFlag(m.away);
       return '<div style="background:var(--bg4);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;margin-bottom:6px;text-align:left">'
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">'
           +'<div style="font-size:11px;font-weight:700;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+hF+' '+m.home+' <span style="font-family:Kallisto,sans-serif;color:var(--g1)">'+m.result.home+'–'+m.result.away+'</span> '+m.away+' '+aF+'</div>'
-          +'<span style="font-size:11px;font-weight:700;color:'+col+';white-space:nowrap;flex-shrink:0">'+(pr.pts>0?'+':'')+(pr.pts||0)+' pts</span>'
+          +'<span style="font-size:11px;font-weight:700;color:'+col+';white-space:nowrap;flex-shrink:0">'+(rp.pts>0?'+':'')+(rp.pts||0)+' pts</span>'
         +'</div>'
         +'<div style="font-size:9px;color:var(--tx3)">'+(CL==='es'?'Puso':'Picked')+': <strong style="color:var(--org)">'+pr.home+'–'+pr.away+'</strong></div>'
         +'</div>';
