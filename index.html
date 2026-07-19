@@ -1330,7 +1330,7 @@ let CU=null, isDark=true, activePolla=null, stripeInst=null, cardEl=null;
 // ── APP VERSION GATE ──────────────────────────────────────────────────────────
 // Bump this number on every deploy players must refresh for. The newest client
 // records it in the cloud; any client running an older number is told to refresh.
-var APP_VERSION = 12;
+var APP_VERSION = 13;
 window._appOutdated = false;
 function checkAppVersion(){
   var cloudVer=(DB.settings&&DB.settings.appVersion)||0;
@@ -2413,26 +2413,11 @@ function saveResult(mid){
   if(m.result&&!(m.result.home===parseInt(hv)&&m.result.away===parseInt(av))){
     if(!confirm('Este partido ya tenía '+m.result.home+'-'+m.result.away+'. ¿Cambiarlo a '+hv+'-'+av+'? Se recalcularán los puntos de todos.'))return;
   }
-  // Idempotency: if result already set, reverse old points before re-scoring
-  if(m.result){
-    const pol0=DB.pollas.find(p=>p.id===m.pollaId);
-    const sc0=pol0?pol0.scoring||{win:1,draw:1,exact:5,diff:2}:{win:1,draw:1,exact:5,diff:2};
-    DB.users.forEach(u=>{
-      const pr=u.predictions.find(p=>p.matchId===mid);
-      if(pr&&pr.pts){u.points=Math.max(0,(u.points||0)-pr.pts);pr.pts=0;pr.type='pending';pr.correct=false;}
-    });
-  }
   m.result={home:parseInt(hv),away:parseInt(av)};
   const pol=DB.pollas.find(p=>p.id===m.pollaId);
-  const sc=pol?pol.scoring||{win:1,draw:1,exact:5,diff:2}:{win:1,draw:1,exact:5,diff:2};
-  DB.users.forEach(u=>{
-    const pr=u.predictions.find(p=>p.matchId===mid);
-    if(pr){
-      const {pts,type}=calcPts(pr.home,pr.away,m.result.home,m.result.away,sc);
-      pr.pts=pts; pr.type=type; pr.correct=(type==='exact');
-      u.points=(u.points||0)+pts;
-    }
-  });
+  // Points are DERIVED, never added by hand — one full recompute covers
+  // this result, any edit to a previous result, and all special/bonus points.
+  recalcPredictions();
   if(pol&&pol.type==='single'){
     const allDone=DB.matches.filter(x=>x.pollaId===pol.id).every(x=>x.result);
     if(allDone)resolveSinglePrizes(pol);
@@ -5035,27 +5020,17 @@ function deleteBonus(id){
 }
 function promptBonusAnswer(id){
   var bq=(DB.bonusQuestions||[]).find(function(b){return b.id===id;});if(!bq)return;
-  // Idempotency: reverse previous points if re-grading
   if(bq.answer){
-    if(!confirm('This bonus was already answered ("'+bq.answer+'"). Re-grading will REVERSE old points first. Continue?'))return;
-    (bq.userAnswers||[]).forEach(function(ua){
-      if(ua.answer.toLowerCase()===bq.answer.toLowerCase()){
-        var u=DB.users.find(function(x){return x.id===ua.userId;});
-        if(u)u.points=Math.max(0,(u.points||0)-bq.pts);
-      }
-    });
-    bq.answer=null;
+    if(!confirm('This bonus was already answered ("'+bq.answer+'"). Re-grading will recalculate all points. Continue?'))return;
   }
   var ans=prompt('Correct answer for:\n"'+bq.question+'"');
   if(ans===null||!ans.trim())return;
   bq.answer=ans.trim();
-  var awarded=0;
-  (bq.userAnswers||[]).forEach(function(ua){
-    if(ua.answer.toLowerCase()===ans.trim().toLowerCase()){
-      var u=DB.users.find(function(x){return x.id===ua.userId;});
-      if(u){u.points=(u.points||0)+bq.pts;awarded++;}
-    }
-  });
+  // Points are DERIVED, never added by hand — recompute everything once.
+  var awarded=(bq.userAnswers||[]).filter(function(ua){
+    return ua.answer&&ua.answer.trim().toLowerCase()===bq.answer.trim().toLowerCase();
+  }).length;
+  recalcPredictions();
   renderAdmBonus();saveDB();alert('✅ Points awarded to '+awarded+' player(s)!');
 }
 function submitBonusAnswer(bqId){
@@ -5245,16 +5220,8 @@ function deleteSpecial(id){
 
 function setSpecialAnswer(id){
   var s=(DB.specials||[]).find(function(x){return x.id===id;});if(!s)return;
-  // Idempotency: reverse previous points if re-grading
   if(s.answer){
-    if(!confirm('Answer already set ("'+s.answer+'"). Re-grading will REVERSE old points first. Continue?'))return;
-    (s.userAnswers||[]).forEach(function(ua){
-      if(ua.answer.trim().toLowerCase()===s.answer.trim().toLowerCase()){
-        var u=DB.users.find(function(x){return x.id===ua.userId;});
-        if(u)u.points=Math.max(0,(u.points||0)-s.pts);
-      }
-    });
-    s.answer=null;s.status='open';
+    if(!confirm('Answer already set ("'+s.answer+'"). Re-grading will recalculate all points. Continue?'))return;
   }
   var ans;
   if(s.opciones&&s.opciones.length){
@@ -5266,13 +5233,11 @@ function setSpecialAnswer(id){
   if(ans===null||!ans.trim())return;
   s.answer=ans.trim();
   s.status='closed';
-  var awarded=0;
-  (s.userAnswers||[]).forEach(function(ua){
-    if(ua.answer.trim().toLowerCase()===ans.trim().toLowerCase()){
-      var u=DB.users.find(function(x){return x.id===ua.userId;});
-      if(u){u.points=(u.points||0)+s.pts;awarded++;}
-    }
-  });
+  // Points are DERIVED, never added by hand — recompute everything once.
+  var awarded=(s.userAnswers||[]).filter(function(ua){
+    return ua.answer&&ua.answer.trim().toLowerCase()===s.answer.trim().toLowerCase();
+  }).length;
+  recalcPredictions();
   renderAdmEspeciales();saveDB();
   alert('✅ Answer: "'+s.answer+'" — '+awarded+' player(s) earned +'+s.pts+' pts');
 }
