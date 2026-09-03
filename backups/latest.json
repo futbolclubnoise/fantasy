@@ -1,6 +1,6 @@
 {
-  "_backupDate": "2026-09-02",
-  "_backupTime": "2026-09-02 19:38:23 UTC",
+  "_backupDate": "2026-09-03",
+  "_backupTime": "2026-09-03 19:39:59 UTC",
   "_totalUsers": 37,
   "_totalPollas": 1,
   "_totalMatches": 104,
@@ -96,7 +96,7 @@
       "homeFlag": "🇲🇽",
       "date": "2026-06-18T20:00:00-05:00",
       "homeLogo": "",
-      "awayFlag": "🇰🇷"
+      "awayFlag": "����🇷"
     },
     {
       "awayLogo": "",
@@ -253,7 +253,7 @@
       "round": "Group C",
       "away": "Scotland",
       "id": 14,
-      "awayFlag": "���󠁧󠁢󠁳󠁣󠁴󠁿",
+      "awayFlag": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
       "homeLogo": "",
       "home": "Haiti",
       "stage": "group",
